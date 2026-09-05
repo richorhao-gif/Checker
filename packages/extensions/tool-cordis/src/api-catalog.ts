@@ -391,7 +391,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     methods: [
       {
         signature: '@Remote(\'getLimits\') getLimits(): Promise<BidReviewLimits>',
-        description: 'Read the deployment limits a Client needs before an upload or a save.',
+        description: 'Read the deployment policy a Client needs before an upload or a save, plus the company name its opinion sheet heads with.',
         parameters: [],
         returns: 'the frozen configured limits.',
       },
@@ -2792,7 +2792,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'BidReviewLimits',
-    declaration: 'export interface BidReviewLimits {\n    readonly maxQualificationsBytes: number;\n    readonly maxDocumentBytes: number;\n}',
+    declaration: 'export interface BidReviewLimits {\n    readonly maxQualificationsBytes: number;\n    readonly maxDocumentBytes: number;\n    readonly companyName: string;\n}',
   },
   {
     name: 'BidReviewQualificationsTooLarge',

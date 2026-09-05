@@ -7,8 +7,10 @@ export type CallId = string
 export interface SelectionTarget { turnSeq: number; stepSeq?: number; callId?: CallId; toolName?: string }
 
 /**
- * One conversation view tab, projected from a 'conversation.view' slot
- * entry's registration options (label falls back to the entry id).
+ * One conversation view tab, projected from the entry that renders that
+ * 'conversation.view' cell — the lowest-priority live entry per id — so a
+ * shadowing entry replaces the tab instead of adding one. The label falls
+ * back to the entry id.
  */
 export interface ViewTab { id: string; label: string }
 

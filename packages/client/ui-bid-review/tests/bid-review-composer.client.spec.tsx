@@ -29,7 +29,9 @@ beforeEach(() => { globalThis.sessionStorage.clear() })
 const t = makeTranslate(zh, commonZh)
 const SID = 's1' as SessionId
 const DOC: StoredDocument = { filename: '标书.pdf', bytes: 3, path: '/srv/bid-documents/1f-标书.pdf' }
-const LIMITS: BidReviewLimits = { maxQualificationsBytes: 64 * 1024, maxDocumentBytes: 100 * 1024 * 1024 }
+const LIMITS: BidReviewLimits = {
+  maxQualificationsBytes: 64 * 1024, maxDocumentBytes: 100 * 1024 * 1024, companyName: '',
+}
 const FILLED: CompanyQualifications = { text: '蔬菜配送资质', updatedAt: 5 }
 
 function ok<T>(value: T): Outcome<T> {

@@ -5,12 +5,14 @@
  * @module @deepseek-ai/dsh-bid-review/types
  */
 
-/** Deployment limits a Client reads before an upload or a qualifications save. */
+/** Deployment policy a Client reads before an upload or a qualifications save. */
 export interface BidReviewLimits {
   /** Maximum UTF-8 byte length accepted for the shared qualifications text. */
   readonly maxQualificationsBytes: number
   /** Maximum decoded byte length accepted for one uploaded bid document. */
   readonly maxDocumentBytes: number
+  /** Company name the review surface heads its opinion sheet with; empty leaves the head to the Client's own copy. */
+  readonly companyName: string
 }
 
 /** The one shared company-qualifications record every user reads and writes. */

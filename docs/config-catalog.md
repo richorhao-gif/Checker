@@ -402,6 +402,8 @@ export interface Config {
   readonly maxDocumentBytes: number
   /** Absolute directory uploaded documents land in; created on first upload. */
   readonly uploadsRoot: string
+  /** Company name published to Clients for the opinion sheet's letterhead; the empty string states none. */
+  readonly companyName: string
 }
 ```
 

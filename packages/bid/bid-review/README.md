@@ -13,8 +13,9 @@ Public request, value, and failure types are exported from the package root and 
 | `maxQualificationsBytes` | Required positive integer: maximum UTF-8 byte length of the shared qualifications text. |
 | `maxDocumentBytes` | Required positive integer: maximum decoded byte length of one uploaded bid document. |
 | `uploadsRoot` | Required non-empty directory that uploaded documents land in; created on the first upload. |
+| `companyName` | Required string published to Clients as the opinion sheet's letterhead; the empty string names no company, and the Client's own copy heads the sheet instead. |
 
-All three are deployment policy and carry no defaults, so a bundle states the sizes it accepts and the directory it writes to rather than inheriting a constant. The Web bundle sets 64 KiB, 100 MiB, and `dshHomePath('bid-documents')`.
+All four are deployment policy and carry no defaults, so a bundle states the sizes it accepts, the directory it writes to, and the company it reviews for rather than inheriting a constant. The Web bundle sets 64 KiB, 100 MiB, `dshHomePath('bid-documents')`, and an empty company name.
 
 ```yaml
 - id: bid-review
@@ -23,6 +24,7 @@ All three are deployment policy and carry no defaults, so a bundle states the si
     maxQualificationsBytes: 65536
     maxDocumentBytes: 104857600
     uploadsRoot: !!js dshHomePath('bid-documents')
+    companyName: ''
 ```
 
 The service injects `storageDomain`. Its durable domain is `bid_review`, whose single `global` slot holds the one company-wide record; the domain declares no tables and no per-Session rows.
@@ -47,7 +49,7 @@ The payload is proved to be base64 by re-encoding it, because Node's decoder sil
 
 | Method | Request | Success `value` | Rejected `error.code` |
 |---|---|---|---|
-| `getLimits` | none | `BidReviewLimits { maxQualificationsBytes, maxDocumentBytes }` | none |
+| `getLimits` | none | `BidReviewLimits { maxQualificationsBytes, maxDocumentBytes, companyName }` | none |
 | `getQualifications` | none | `CompanyQualifications { text, updatedAt }` | none |
 | `setQualifications` | `BidReviewSetQualificationsRequest { text }` | committed `CompanyQualifications` | `qualifications-too-large` |
 | `uploadDocument` | `BidReviewUploadRequest { filename, contentBase64 }` | `BidReviewDocument { path }` | `filename-blank`, `filename-unsafe`, `content-invalid`, `document-too-large` |

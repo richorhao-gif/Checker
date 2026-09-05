@@ -2,25 +2,29 @@
 /**
  * ui-bid-review browser half on a real cordis Context with fake slots and
  * Remote faces: the plugin registers the shadowing entry at
- * conversation.composer.bar below the free-text bar's priority, the injected
- * face folds the carrier and business envelopes into one outcome per operation,
- * and the registration withdraws with the plugin fiber (HMR safety). The node
- * half is exercised over the same Context.
+ * conversation.composer.bar below the free-text bar's priority and the one at
+ * the conversation.view 'chat' cell below the chat view's, the injected faces
+ * fold the carrier and business envelopes into one outcome per operation, and
+ * both registrations withdraw with the plugin fiber (HMR safety). The node half
+ * is exercised over the same Context.
  */
 import { Context, Service } from '@deepseek-ai/cordis'
 import { describe, expect, it } from 'vitest'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
+import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type {
   BidReviewLimits, BidReviewSetQualificationsResult, BidReviewUploadResult, CompanyQualifications,
 } from '@deepseek-ai/dsh-bid-review/types'
-import type { BidReviewInjected } from '../src/client/slots.ts'
+import type { BidReviewInjected, ReviewDeskInjected } from '../src/client/slots.ts'
 import { apply, inject } from '../src/client/index.ts'
 import { apply as nodeApply } from '../src/index.ts'
 
-const LIMITS: BidReviewLimits = { maxQualificationsBytes: 64, maxDocumentBytes: 128 }
+const LIMITS: BidReviewLimits = { maxQualificationsBytes: 64, maxDocumentBytes: 128, companyName: '' }
 const QUALIFICATIONS: CompanyQualifications = { text: '蔬菜配送', updatedAt: 7 }
+const SID = 'session-1' as SessionId
 
 /** The wire every injected operation resolves against, mutable per test. */
 interface Wire {
@@ -34,6 +38,10 @@ interface Wire {
 async function bench() {
   const ctx = new Context()
   const calls: { method: string; request: unknown }[] = []
+  // Records the session ids the desk's loadOlder verb reached; dropBinding
+  // simulates a binding gone by the time the paging effect fires.
+  const paged: SessionId[] = []
+  let dropBinding = false
   const wire: Wire = {
     limits: { ok: true, value: LIMITS },
     qualifications: { ok: true, value: QUALIFICATIONS },
@@ -66,13 +74,21 @@ async function bench() {
   new RemoteService(ctx)
   ctx.provide('remote.bidReview', bidReview)
   await ctx.plugin(SlotRegistry).await()
-  // ui-conversation owns this declaration in the product; the bench declares the
-  // same slot so the plugin's inject point resolves immediately.
+  // ui-conversation owns both declarations in the product; the bench declares
+  // the same slots so the plugin's inject points resolve immediately.
   ctx.slots.register({
     name: 'root',
-    children: { 'conversation.composer.bar': { kind: 'single', scope: 'session-maybe' } },
+    children: {
+      'conversation.composer.bar': { kind: 'single', scope: 'session-maybe' },
+      'conversation.view': { kind: 'list', scope: 'session' },
+    },
   } as never, (() => null) as never)
   ctx.provide('locale', new LocaleRuntime(ctx))
+  ctx.provide('sessions', {
+    binding: (id: SessionId) => dropBinding
+      ? undefined
+      : { sessionId: id, session: { loadOlder: () => { paged.push(id) } } },
+  })
   const fiber = ctx.plugin({ inject: [...inject], apply })
   await fiber.await()
   return {
@@ -89,6 +105,17 @@ async function bench() {
       const entry = ctx.slots.entries('conversation.composer.bar')[0]
       return (entry?.inject as unknown as (() => BidReviewInjected) | undefined)?.()
     },
+    viewEntry: () => {
+      const entry = ctx.slots.entries('conversation.view')[0]
+      if (entry === undefined) return undefined
+      return { ...entry.options, locale: entry.locale, registrant: entry.registrant }
+    },
+    deskFace: () => {
+      const entry = ctx.slots.entries('conversation.view')[0]
+      return (entry?.inject as unknown as ((sessionId: SessionId) => ReviewDeskInjected) | undefined)?.(SID)
+    },
+    paged,
+    dropBinding: () => { dropBinding = true },
   }
 }
 
@@ -151,12 +178,56 @@ describe('ui-bid-review browser plugin', () => {
     expect(b.calls[1]?.request).toMatchObject({ filename: '标书.pdf', contentBase64: 'Ymlk' })
   })
 
-  it('withdraws the registration with the plugin fiber', async () => {
+  it('shadows the chat view cell with the reviewing desk', async () => {
+    const b = await bench()
+
+    // The chat view registers its 'chat' cell at the default 0; a list cell
+    // renders its lowest-priority entry, so -1 is what replaces the transcript.
+    expect(b.viewEntry()).toMatchObject({
+      id: 'chat', priority: -1, locale: 'bidReview', registrant: 'ui-bid-review',
+    })
+  })
+
+  it('names the desk tab through a thunk that follows the active locale', async () => {
+    const b = await bench()
+
+    const label = resolveSlotLabel(b.viewEntry()?.label)
+    expect(label).toBe(b.ctx.locale.bind('bidReview')('desk.view.label'))
+  })
+
+  it('injects the desk the two reads its opinion sheet heads with', async () => {
+    const b = await bench()
+
+    const face = b.deskFace()!
+    expect(Object.keys(face).sort()).toEqual(['loadOlder', 'readLimits', 'readQualifications'])
+    expect(await face.readLimits()).toEqual({ ok: true, value: LIMITS })
+    expect(await face.readQualifications()).toEqual({ ok: true, value: QUALIFICATIONS })
+    expect(b.calls.map(call => call.method)).toEqual(['getLimits', 'getQualifications'])
+  })
+
+  it('pages the injected Session through its loadOlder verb', async () => {
+    const b = await bench()
+
+    b.deskFace()!.loadOlder()
+
+    expect(b.paged).toEqual([SID])
+  })
+
+  it('swallows a binding gone by the time the desk pages', async () => {
+    const b = await bench()
+    b.dropBinding()
+
+    expect(() => { b.deskFace()!.loadOlder() }).not.toThrow()
+    expect(b.paged).toEqual([])
+  })
+
+  it('withdraws both registrations with the plugin fiber', async () => {
     const b = await bench()
 
     await b.fiber.dispose()
 
     expect(b.ctx.slots.entries('conversation.composer.bar')).toHaveLength(0)
+    expect(b.ctx.slots.entries('conversation.view')).toHaveLength(0)
   })
 
   it('re-registers cleanly when the plugin is reloaded', async () => {
@@ -167,7 +238,9 @@ describe('ui-bid-review browser plugin', () => {
     await reloaded.await()
 
     expect(b.ctx.slots.entries('conversation.composer.bar')).toHaveLength(1)
+    expect(b.ctx.slots.entries('conversation.view')).toHaveLength(1)
     expect(b.entry()).toMatchObject({ priority: -1 })
+    expect(b.viewEntry()).toMatchObject({ id: 'chat', priority: -1 })
   })
 
   it('the node half applies without host-side behavior', () => {

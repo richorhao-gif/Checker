@@ -333,6 +333,20 @@ describe('conversation slot inject API', () => {
     unsub()
     await b.runtime.dispose()
   })
+
+  it('views list one tab per cell, so a shadowing entry replaces the chat tab', async () => {
+    const b = await bench()
+    const { injected } = b.conversationApi(ROOT)
+    // What ui-bid-review does in production: a lower priority on the chat cell.
+    const off = b.slots.register(
+      { name: 'conversation.view', id: 'chat', priority: -1, label: '审卷台' } as never, (() => null) as never)
+    expect(injected.views.list()).toEqual([{ id: 'chat', label: '审卷台' }])
+    // Both registrations stay on the raw ledger, the inspection surface.
+    expect(b.slots.entries('conversation.view').filter(e => e.options.id === 'chat')).toHaveLength(2)
+    off()
+    expect(injected.views.list()).toEqual([{ id: 'chat', label: '对话' }])
+    await b.runtime.dispose()
+  })
 })
 
 describe('details inject API', () => {

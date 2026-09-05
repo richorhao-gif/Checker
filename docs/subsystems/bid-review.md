@@ -9,12 +9,14 @@ Source: [`packages/bid/bid-review/src/types.ts`](../../packages/bid/bid-review/s
 ## Public types
 
 ```ts type-equiv
-/** Deployment limits a Client reads before an upload or a qualifications save. */
+/** Deployment policy a Client reads before an upload or a qualifications save. */
 interface BidReviewLimits {
   /** Maximum UTF-8 byte length accepted for the shared qualifications text. */
   readonly maxQualificationsBytes: number
   /** Maximum decoded byte length accepted for one uploaded bid document. */
   readonly maxDocumentBytes: number
+  /** Company name the review surface heads its opinion sheet with; empty leaves the head to the Client's own copy. */
+  readonly companyName: string
 }
 ```
 
@@ -154,17 +156,19 @@ The payload is proved to be base64 by re-encoding it, because Node's decoder sil
 
 ## Persistence and Remote contract
 
-The service stores the record in the `bid_review` storage domain through `ctx.storageDomain`. The domain declares one `global` slot with the schema-validated `{text, updatedAt}` shape and no tables, so there are no per-Session rows and nothing to cascade on Session disposal. The Web Host composition sets `maxQualificationsBytes: 65536`, `maxDocumentBytes: 104857600`, and `uploadsRoot: dshHomePath('bid-documents')`; all three are required Config fields with no defaults, so a deployment states its own sizes and directory. The json backend stores the domain under `dshHomePath('storages')`, which makes the record server-side and shared across LAN users by construction.
+The service stores the record in the `bid_review` storage domain through `ctx.storageDomain`. The domain declares one `global` slot with the schema-validated `{text, updatedAt}` shape and no tables, so there are no per-Session rows and nothing to cascade on Session disposal. The Web Host composition sets `maxQualificationsBytes: 65536`, `maxDocumentBytes: 104857600`, `uploadsRoot: dshHomePath('bid-documents')`, and `companyName: ''`; all four are required Config fields with no defaults, so a deployment states its own sizes, directory, and company. An empty `companyName` states no company, and the review surface heads its opinion sheet with its own copy instead. The json backend stores the domain under `dshHomePath('storages')`, which makes the record server-side and shared across LAN users by construction.
 
-The package publishes the Host `bidReview.getLimits`, `bidReview.getQualifications`, `bidReview.setQualifications`, and `bidReview.uploadDocument` unary Remote contract through `TypertRemoteService` and `@Remote`; the generated Cordis API below is the method-level authority. `getLimits` exists so a Client can refuse an oversized document before reading its bytes into memory. Both size failures return `maxBytes` and `actualBytes`, and `uploadDocument` checks the filename before the content, so a request carrying both defects reports the filename.
+The package publishes the Host `bidReview.getLimits`, `bidReview.getQualifications`, `bidReview.setQualifications`, and `bidReview.uploadDocument` unary Remote contract through `TypertRemoteService` and `@Remote`; the generated Cordis API below is the method-level authority. `getLimits` exists so a Client can refuse an oversized document before reading its bytes into memory, and so the review surface can read the letterhead its opinion sheet heads with. Both size failures return `maxBytes` and `actualBytes`, and `uploadDocument` checks the filename before the content, so a request carrying both defects reports the filename.
 
 ## Web surface
 
 [`@deepseek-ai/dsh-client-ui-bid-review`](../../packages/client/ui-bid-review) is the browser consumer. `@deepseek-ai/dsh-api-remotes` mounts the generated `bidReview` contribution, so the plugin calls `ctx.remote.bidReview` and never touches the transport. The methods are not in the loopback-only privileged set, so a LAN browser reaches them through the same `trusted-host` gateway as the rest of the Remote surface.
 
-The plugin contributes the `priority: -1` entry of the single-kind `conversation.composer.bar` slot that `ui-conversation` declares. A single-kind slot renders its lowest-priority entry, so this entry replaces the free-text `InputBar` without editing that package, and it declares no `children`, so the command menu, image rail, plan seat, and model picker are absent because nothing renders them. The qualifications editor is one dialog around one textarea with a live UTF-8 byte count against `maxQualificationsBytes`.
+The plugin contributes two `priority: -1` entries into slots `ui-conversation` declares: the single-kind `conversation.composer.bar`, whose lowest-priority entry renders, and the `chat` cell of the `conversation.view` list slot, whose lowest-priority entry per cell renders. The composer entry replaces the free-text `InputBar` without editing that package and declares no `children`, so the command menu, image rail, plan seat, and model picker are absent because nothing renders them. The qualifications editor is one dialog around one textarea with a live UTF-8 byte count against `maxQualificationsBytes`.
 
 Submission composes the fixed review question, the uploaded document's absolute server path, and the shared qualifications text into one prompt and sends it through the standard input actions, so it is an ordinary user message on the existing `conversation.send` path. One document per conversation is Client state plus `sessionStorage`, and the Host keeps no per-Session registry.
+
+The view entry is the reviewing desk, which replaces the transcript for a submitted review and derives everything it paints from the conversation snapshot: one posture per real state of the turn, one page-margin mark per settled tool call, the open turn's own span as the timer, and the closing assistant text as the opinion sheet's body and verdict. The paper is a document stand-in whose tint follows the settled-call count rather than a measured position inside the file, and no stage is read out of prompt or assistant text, because the log carries no bid-domain vocabulary. A sealed desk holds its seal and then turns to the opinion sheet, which heads with `companyName` and states the shared record's save time as its basis. Because replacing the transcript also replaces its 「加载更早」 history-paging button, the desk pages the window itself through an injected `loadOlder` until a reopened Session's submission enters it. Approvals and questions stay in the `conversation.composer` chain the plugin does not shadow, so the desk points at a wait without owning its answer.
 
 ## Boundaries and limitations
 
@@ -174,6 +178,7 @@ Submission composes the fixed review question, the uploaded document's absolute 
 - The service stores bytes and returns a path. Whether a document is readable, and what a bid format requires, belongs to the Agent's own file tools, so a corrupted upload surfaces later as an Agent read failure rather than as an upload refusal.
 - Sanitization is lossy and not reversible: a stored name records the sanitized derivation, not the original filename, and two uploads of the same file produce two distinct paths.
 - The four methods record no authenticated actor or audit identity and therefore assume a trusted caller boundary.
+- The desk reports the agent loop's progress, not the bid's: the log carries no bid-domain stage, so one would have to be published as a Session event before the desk could name it, and the verdict it seals is the model's own closing words — a report that states neither 符合 nor 不符合 leaves the seal uncommitted.
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -191,7 +196,8 @@ Storage-domain service publishing the shared qualifications record and the docum
 
 ```ts cordis-catalog
 /**
- * Read the deployment limits a Client needs before an upload or a save.
+ * Read the deployment policy a Client needs before an upload or a save, plus
+ * the company name its opinion sheet heads with.
  * @returns the frozen configured limits.
  */
 @Remote('getLimits') getLimits(): Promise<BidReviewLimits>
@@ -221,5 +227,5 @@ Storage-domain service publishing the shared qualifications record and the docum
 @Remote('uploadDocument') async uploadDocument(request: BidReviewUploadRequest): Promise<BidReviewUploadResult>
 ```
 
-Source: [`packages/bid/bid-review/src/index.ts:124`](../../packages/bid/bid-review/src/index.ts)
+Source: [`packages/bid/bid-review/src/index.ts:126`](../../packages/bid/bid-review/src/index.ts)
 <!-- END GENERATED cordis-surface -->

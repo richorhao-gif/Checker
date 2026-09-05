@@ -46,6 +46,8 @@ export interface Config {
   readonly maxDocumentBytes: number
   /** Absolute directory uploaded documents land in; created on first upload. */
   readonly uploadsRoot: string
+  /** Company name published to Clients for the opinion sheet's letterhead; the empty string states none. */
+  readonly companyName: string
 }
 
 declare module '@deepseek-ai/cordis' {
@@ -129,6 +131,9 @@ export class BidReviewService extends TypertRemoteService {
     maxQualificationsBytes: s.number().step(1).min(1).required(),
     maxDocumentBytes: s.number().step(1).min(1).required(),
     uploadsRoot: s.string().min(1).required(),
+    // A deployment that names no company states the empty string; the Client's
+    // own copy heads the opinion sheet instead.
+    companyName: s.string().required(),
   })
 
   private readonly limits: BidReviewLimits
@@ -145,6 +150,7 @@ export class BidReviewService extends TypertRemoteService {
     this.limits = Object.freeze({
       maxQualificationsBytes: resolveByteLimit(config.maxQualificationsBytes, 'maxQualificationsBytes'),
       maxDocumentBytes: resolveByteLimit(config.maxDocumentBytes, 'maxDocumentBytes'),
+      companyName: config.companyName,
     })
     this.uploadsRoot = resolve(config.uploadsRoot)
   }
@@ -159,7 +165,8 @@ export class BidReviewService extends TypertRemoteService {
   }
 
   /**
-   * Read the deployment limits a Client needs before an upload or a save.
+   * Read the deployment policy a Client needs before an upload or a save, plus
+   * the company name its opinion sheet heads with.
    * @returns the frozen configured limits.
    */
   @Remote('getLimits')

@@ -21,7 +21,7 @@ import type { BidReviewRemote, ReviewFailure } from '../src/client/remote.ts'
 import { zh } from '../src/client/locales.ts'
 
 const t = makeTranslate(zh, commonZh)
-const LIMITS: BidReviewLimits = { maxQualificationsBytes: 64, maxDocumentBytes: 128 }
+const LIMITS: BidReviewLimits = { maxQualificationsBytes: 64, maxDocumentBytes: 128, companyName: '' }
 const QUALIFICATIONS: CompanyQualifications = { text: '蔬菜配送', updatedAt: 7 }
 
 /** The wire the operations resolve against, mutable per case. */

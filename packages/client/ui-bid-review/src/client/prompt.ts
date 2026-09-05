@@ -27,3 +27,18 @@ export const BID_REVIEW_PRESET_QUESTION =
 export function buildBidReviewPrompt(documentPath: string, qualifications: string): string {
   return `${BID_REVIEW_PRESET_QUESTION}\n\n标书文件：${documentPath}\n\n公司资格：\n${qualifications}`
 }
+
+/** The submitted prompt's document line, the one field this surface parses back out. */
+const DOCUMENT_LINE = /^标书文件：(.*)$/m
+
+/**
+ * Recover the document path from a prompt {@link buildBidReviewPrompt} composed.
+ * The reviewing desk reads it out of the durable user message, because the
+ * browser-side copy is dropped once the review is under way.
+ * @param prompt - one submitted user message.
+ * @returns the absolute server path, or null when the message is not one this
+ * surface composed.
+ */
+export function parseBidReviewDocumentPath(prompt: string): string | null {
+  return DOCUMENT_LINE.exec(prompt)?.[1] ?? null
+}

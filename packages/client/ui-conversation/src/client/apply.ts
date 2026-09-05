@@ -150,9 +150,12 @@ export function apply(ctx: Context): void {
   // persisted: a fresh page load keeps the open-jump-to-bottom default.
   const chatScrollPositions = new Map<SessionId, ChatScrollPosition>()
 
+  // One tab per view cell, not per raw entry: a shadowing entry (a lower
+  // priority on an existing id) replaces that cell's renderer, so the raw
+  // ledger would list the same view twice.
   const viewTabs = (): ViewTab[] => {
     const tabs: ViewTab[] = []
-    for (const entry of slots.entries('conversation.view')) {
+    for (const entry of slots.entriesOfSlot('conversation.view')) {
       /* v8 ignore next -- unreachable: list registration validates id at load. */
       if (entry.options.id === undefined) continue
       tabs.push({ id: entry.options.id, label: resolveSlotLabel(entry.options.label) ?? entry.options.id })

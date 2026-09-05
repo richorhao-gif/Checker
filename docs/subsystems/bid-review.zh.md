@@ -9,12 +9,14 @@
 ## 公开类型
 
 ```ts type-equiv
-/** Deployment limits a Client reads before an upload or a qualifications save. */
+/** Deployment policy a Client reads before an upload or a qualifications save. */
 interface BidReviewLimits {
   /** Maximum UTF-8 byte length accepted for the shared qualifications text. */
   readonly maxQualificationsBytes: number
   /** Maximum decoded byte length accepted for one uploaded bid document. */
   readonly maxDocumentBytes: number
+  /** Company name the review surface heads its opinion sheet with; empty leaves the head to the Client's own copy. */
+  readonly companyName: string
 }
 ```
 
@@ -154,17 +156,19 @@ type BidReviewUploadResult =
 
 ## 持久化与 Remote 约定
 
-服务通过 `ctx.storageDomain` 在 `bid_review` 存储域中保存该记录。该域只声明一个 `global` 槽，形状为经 schema 校验的 `{text, updatedAt}`，且没有表，因此不存在按 Session 划分的行，Session disposal 也没有可级联的对象。Web Host 组合设置 `maxQualificationsBytes: 65536`、`maxDocumentBytes: 104857600` 和 `uploadsRoot: dshHomePath('bid-documents')`；三者都是无默认值的必填 Config 字段，因此部署自行声明大小与目录。json backend 把该域存放在 `dshHomePath('storages')` 下，这使记录天然位于服务端并被局域网用户共享。
+服务通过 `ctx.storageDomain` 在 `bid_review` 存储域中保存该记录。该域只声明一个 `global` 槽，形状为经 schema 校验的 `{text, updatedAt}`，且没有表，因此不存在按 Session 划分的行，Session disposal 也没有可级联的对象。Web Host 组合设置 `maxQualificationsBytes: 65536`、`maxDocumentBytes: 104857600`、`uploadsRoot: dshHomePath('bid-documents')` 与 `companyName: ''`；四者都是无默认值的必填 Config 字段，因此部署自行声明大小、目录与公司。空的 `companyName` 表示不命名公司，此时审核界面用自己的文案作意见书页眉。json backend 把该域存放在 `dshHomePath('storages')` 下，这使记录天然位于服务端并被局域网用户共享。
 
-该包通过 `TypertRemoteService` 与 `@Remote` 发布 Host `bidReview.getLimits`、`bidReview.getQualifications`、`bidReview.setQualifications` 和 `bidReview.uploadDocument` 一元 Remote 约定；下方生成的 Cordis API 是方法级权威。`getLimits` 的存在使 Client 能在把文件字节读入内存前拒绝超限文件。两个大小失败都返回 `maxBytes` 与 `actualBytes`，且 `uploadDocument` 先检查文件名再检查内容，因此同时带有两种缺陷的请求报告文件名问题。
+该包通过 `TypertRemoteService` 与 `@Remote` 发布 Host `bidReview.getLimits`、`bidReview.getQualifications`、`bidReview.setQualifications` 和 `bidReview.uploadDocument` 一元 Remote 约定；下方生成的 Cordis API 是方法级权威。`getLimits` 的存在使 Client 能在把文件字节读入内存前拒绝超限文件，也使审核界面能读到其意见书所用的页眉。两个大小失败都返回 `maxBytes` 与 `actualBytes`，且 `uploadDocument` 先检查文件名再检查内容，因此同时带有两种缺陷的请求报告文件名问题。
 
 ## Web 界面
 
 [`@deepseek-ai/dsh-client-ui-bid-review`](../../packages/client/ui-bid-review) 是浏览器侧消费方。`@deepseek-ai/dsh-api-remotes` 挂载生成的 `bidReview` 贡献，因此该插件调用 `ctx.remote.bidReview`，不接触传输层。这些方法不在仅限 loopback 的特权集合中，所以局域网浏览器通过与其余 Remote 界面相同的 `trusted-host` 网关访问它们。
 
-该插件贡献 `ui-conversation` 声明的 single-kind `conversation.composer.bar` slot 中 `priority: -1` 的条目。single-kind slot 渲染优先级最低的条目，因此该条目替换自由文本 `InputBar` 而无需编辑那个包；它也不声明 `children`，所以命令菜单、图片栏、计划位与模型选择器缺失的原因是没有任何东西渲染它们。资格编辑器是围绕一个 textarea 的单个弹窗，带有对照 `maxQualificationsBytes` 的实时 UTF-8 字节计数。
+该插件向 `ui-conversation` 声明的槽贡献两个 `priority: -1` 条目：single-kind 槽 `conversation.composer.bar`（渲染优先级最低的条目），以及 `conversation.view` list 槽的 `chat` 格（每格渲染优先级最低的条目）。composer 条目在不编辑那个包的情况下替换自由文本 `InputBar`，且不声明 `children`，所以命令菜单、图片栏、计划位与模型选择器缺失的原因是没有任何东西渲染它们。资格编辑器是围绕一个 textarea 的单个弹窗，带有对照 `maxQualificationsBytes` 的实时 UTF-8 字节计数。
 
 提交把固定审核问题、上传文件的服务器绝对路径与共享资格文本组装为一个 prompt，并通过标准 input actions 发送，因此它是既有 `conversation.send` 路径上的一条普通用户消息。每会话一个文件是 Client 状态加 `sessionStorage`，Host 不保存按 Session 划分的登记表。
+
+视图条目是审卷台：它替换已提交审核的转录，并把画出的全部内容从会话 snapshot 中派生——每个姿态对应回合的一个真实状态，每个页边标记对应一次已结算的工具调用，计时器是进行中回合自身的跨度，意见书正文与结论取收尾的 assistant 文本。纸面是一个文件替身，其色调跟随已结算调用数，而不是文件内部被测量的位置；也没有任何 stage 从 prompt 或 assistant 文本里读出，因为日志不携带标书业务词汇。封卷的审卷台落印后翻到意见书，意见书以 `companyName` 作页眉，并以共享记录的保存时间说明依据。由于替换转录也替换了它的「加载更早」历史翻页按钮，审卷台通过注入的 `loadOlder` 自行翻页，直到一个重开 Session 的提交进入窗口。审批与反问仍在本插件不遮蔽的 `conversation.composer` chain 上，因此审卷台只指出等待，不拥有对它的回答。
 
 ## 边界与限制
 
@@ -174,6 +178,7 @@ type BidReviewUploadResult =
 - 服务存储字节并返回路径。文件是否可读、以及标书格式要求什么，属于 Agent 自己的文件工具，因此损坏的上传会在稍后表现为 Agent 读取失败，而不是上传拒绝。
 - 净化是有损且不可逆的：存储名记录的是净化后的派生名，不是原始文件名，同一文件的两次上传产生两个不同路径。
 - 四个方法都不记录已认证的 actor 或审计身份，因此假设调用方边界可信。
+- 审卷台报告的是 agent 循环的进度，不是标书业务的进度：日志不携带标书业务阶段，因此必须先把它发布为 Session 事件，审卷台才能说出它；而它落印的结论是模型自己的收尾文字——既未说「符合」也未说「不符合」的报告会让印章不落结论。
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -191,7 +196,8 @@ Storage-domain service publishing the shared qualifications record and the docum
 
 ```ts cordis-catalog
 /**
- * Read the deployment limits a Client needs before an upload or a save.
+ * Read the deployment policy a Client needs before an upload or a save, plus
+ * the company name its opinion sheet heads with.
  * @returns the frozen configured limits.
  */
 @Remote('getLimits') getLimits(): Promise<BidReviewLimits>
@@ -221,5 +227,5 @@ Storage-domain service publishing the shared qualifications record and the docum
 @Remote('uploadDocument') async uploadDocument(request: BidReviewUploadRequest): Promise<BidReviewUploadResult>
 ```
 
-Source: [`packages/bid/bid-review/src/index.ts:124`](../../packages/bid/bid-review/src/index.ts)
+Source: [`packages/bid/bid-review/src/index.ts:126`](../../packages/bid/bid-review/src/index.ts)
 <!-- END GENERATED cordis-surface -->

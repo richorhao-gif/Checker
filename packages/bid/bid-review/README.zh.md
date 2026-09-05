@@ -13,8 +13,9 @@
 | `maxQualificationsBytes` | 必填正整数：共享资格文本的最大 UTF-8 字节长度。 |
 | `maxDocumentBytes` | 必填正整数：单个上传标书文件解码后的最大字节长度。 |
 | `uploadsRoot` | 必填非空目录，上传文件的落点；首次上传时创建。 |
+| `companyName` | 必填字符串，作为意见书的红头发布给 Client；空字符串表示不署名，此时由 Client 自己的文案抬头。 |
 
-三者都是部署策略且没有默认值，因此 bundle 声明自己接受的大小与写入的目录，而不是继承某个常量。Web bundle 设为 64 KiB、100 MiB 与 `dshHomePath('bid-documents')`。
+四者都是部署策略且没有默认值，因此 bundle 声明自己接受的大小、写入的目录与所审核的公司，而不是继承某个常量。Web bundle 设为 64 KiB、100 MiB、`dshHomePath('bid-documents')` 与空公司名。
 
 ```yaml
 - id: bid-review
@@ -23,6 +24,7 @@
     maxQualificationsBytes: 65536
     maxDocumentBytes: 104857600
     uploadsRoot: !!js dshHomePath('bid-documents')
+    companyName: ''
 ```
 
 服务注入 `storageDomain`。其持久存储域为 `bid_review`，其中唯一的 `global` 槽保存这一份全公司记录；该域不声明任何表，也没有按 Session 的行。
@@ -47,7 +49,7 @@
 
 | 方法 | 请求 | 成功 `value` | 拒绝的 `error.code` |
 |---|---|---|---|
-| `getLimits` | 无 | `BidReviewLimits { maxQualificationsBytes, maxDocumentBytes }` | 无 |
+| `getLimits` | 无 | `BidReviewLimits { maxQualificationsBytes, maxDocumentBytes, companyName }` | 无 |
 | `getQualifications` | 无 | `CompanyQualifications { text, updatedAt }` | 无 |
 | `setQualifications` | `BidReviewSetQualificationsRequest { text }` | 已提交的 `CompanyQualifications` | `qualifications-too-large` |
 | `uploadDocument` | `BidReviewUploadRequest { filename, contentBase64 }` | `BidReviewDocument { path }` | `filename-blank`、`filename-unsafe`、`content-invalid`、`document-too-large` |

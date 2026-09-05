@@ -18,7 +18,7 @@ import { zh } from '../src/client/locales.ts'
 afterEach(cleanup)
 
 const t = makeTranslate(zh, commonZh)
-const LIMITS: BidReviewLimits = { maxQualificationsBytes: 64, maxDocumentBytes: 128 }
+const LIMITS: BidReviewLimits = { maxQualificationsBytes: 64, maxDocumentBytes: 128, companyName: '' }
 
 /** One outcome the dialog's verbs resolve against. */
 function ok<T>(value: T): Outcome<T> {
@@ -103,7 +103,7 @@ describe('QualificationsEditor', () => {
   })
 
   it('counts the UTF-8 bytes of the draft against the limit', async () => {
-    const ui = mount({ limits: ok({ maxQualificationsBytes: 64 * 1024, maxDocumentBytes: 128 }) })
+    const ui = mount({ limits: ok({ maxQualificationsBytes: 64 * 1024, maxDocumentBytes: 128, companyName: '' }) })
     await waitFor(() => { expect(ui.queryByRole('textbox')).toBeTruthy() })
 
     fireEvent.change(ui.textbox(), { target: { value: '蔬菜' } })
@@ -113,7 +113,7 @@ describe('QualificationsEditor', () => {
 
   it('refuses to save a draft over the limit and says why', async () => {
     // Six CJK characters are 18 bytes against a 12-byte limit.
-    const ui = mount({ limits: ok({ maxQualificationsBytes: 12, maxDocumentBytes: 128 }) })
+    const ui = mount({ limits: ok({ maxQualificationsBytes: 12, maxDocumentBytes: 128, companyName: '' }) })
     await waitFor(() => { expect(ui.queryByRole('textbox')).toBeTruthy() })
 
     fireEvent.change(ui.textbox(), { target: { value: '蔬菜肉禽蛋奶' } })

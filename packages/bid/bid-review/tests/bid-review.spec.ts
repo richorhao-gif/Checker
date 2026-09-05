@@ -54,20 +54,33 @@ describe('BidReviewService public contract', () => {
     ])
   })
 
-  it('serves the configured limits', async () => {
-    const { ctx } = await harness({ maxQualificationsBytes: 128, maxDocumentBytes: 96 })
+  it('serves the configured limits and letterhead', async () => {
+    const { ctx } = await harness({
+      maxQualificationsBytes: 128, maxDocumentBytes: 96, companyName: '绿源农产品配送有限公司',
+    })
     await expect(ctx.bidReview.getLimits()).resolves.toEqual({
       maxQualificationsBytes: 128,
       maxDocumentBytes: 96,
+      companyName: '绿源农产品配送有限公司',
     })
+  })
+
+  it('publishes an empty letterhead when the deployment states no company name', async () => {
+    const { ctx } = await harness()
+    await expect(ctx.bidReview.getLimits()).resolves.toMatchObject({ companyName: '' })
   })
 
   it('rejects a non-positive or fractional byte limit at construction', async () => {
     const invalid: Config[] = [
-      { maxQualificationsBytes: 0, maxDocumentBytes: 16, uploadsRoot: 'uploads' },
-      { maxQualificationsBytes: -1, maxDocumentBytes: 16, uploadsRoot: 'uploads' },
-      { maxQualificationsBytes: 1.5, maxDocumentBytes: 16, uploadsRoot: 'uploads' },
-      { maxQualificationsBytes: 16, maxDocumentBytes: Number.MAX_SAFE_INTEGER + 1, uploadsRoot: 'uploads' },
+      { maxQualificationsBytes: 0, maxDocumentBytes: 16, uploadsRoot: 'uploads', companyName: '' },
+      { maxQualificationsBytes: -1, maxDocumentBytes: 16, uploadsRoot: 'uploads', companyName: '' },
+      { maxQualificationsBytes: 1.5, maxDocumentBytes: 16, uploadsRoot: 'uploads', companyName: '' },
+      {
+        maxQualificationsBytes: 16,
+        maxDocumentBytes: Number.MAX_SAFE_INTEGER + 1,
+        uploadsRoot: 'uploads',
+        companyName: '',
+      },
     ]
     for (const config of invalid) {
       const ctx = new Context()
@@ -82,6 +95,7 @@ describe('BidReviewService public contract', () => {
       maxQualificationsBytes: 16,
       maxDocumentBytes: 16,
       uploadsRoot: 'uploads',
+      companyName: '',
     })
     await expect(service.getQualifications()).rejects.toThrow('not initialized')
     await expect(service.setQualifications({ text: '' })).rejects.toThrow('not initialized')

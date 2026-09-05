@@ -67,13 +67,15 @@
         maxNoteBytes: 8192
 
     # Fixed-question bid review: the one company-wide qualifications record and
-    # the sanitized landing of every uploaded bid document.
+    # the sanitized landing of every uploaded bid document. Set companyName to
+    # the deploying company so the opinion sheet heads with it.
     - id: bid-review
       name: '@deepseek-ai/dsh-bid-review'
       config:
         maxQualificationsBytes: 65536
         maxDocumentBytes: 104857600
         uploadsRoot: !!js dshHomePath('bid-documents')
+        companyName: ''
 
     # Browser Session export: `/export` command plus the shared download dialog.
     - id: session-log-download

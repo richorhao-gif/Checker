@@ -2,10 +2,13 @@
  * The fixed review question and the prompt assembled around it. The question is
  * this deployment's entire user-facing entry, so it is pinned verbatim —
  * including its original doubled 出 — and the assembled prompt's field order is
- * pinned with it.
+ * pinned with it, along with the parse that recovers the document path from the
+ * durable message the reviewing desk reads.
  */
 import { describe, expect, it } from 'vitest'
-import { BID_REVIEW_PRESET_QUESTION, buildBidReviewPrompt } from '../src/client/prompt.ts'
+import {
+  BID_REVIEW_PRESET_QUESTION, buildBidReviewPrompt, parseBidReviewDocumentPath,
+} from '../src/client/prompt.ts'
 
 describe('buildBidReviewPrompt', () => {
   it('pins the fixed review question verbatim', () => {
@@ -38,5 +41,19 @@ describe('buildBidReviewPrompt', () => {
     const prompt = buildBidReviewPrompt('/srv/a.pdf', '第一行\n第二行')
 
     expect(prompt.endsWith('公司资格：\n第一行\n第二行')).toBe(true)
+  })
+})
+
+describe('parseBidReviewDocumentPath', () => {
+  it('recovers the path out of a prompt this surface composed', () => {
+    expect(parseBidReviewDocumentPath(buildBidReviewPrompt('/srv/bid-documents/1f-标书.pdf', '蔬菜配送资质')))
+      .toBe('/srv/bid-documents/1f-标书.pdf')
+    expect(parseBidReviewDocumentPath(buildBidReviewPrompt('C:\\dsh\\bid-documents\\2a-标书.docx', '')))
+      .toBe('C:\\dsh\\bid-documents\\2a-标书.docx')
+  })
+
+  it('reports a message this surface did not compose', () => {
+    expect(parseBidReviewDocumentPath('随便聊聊')).toBeNull()
+    expect(parseBidReviewDocumentPath('')).toBeNull()
   })
 })

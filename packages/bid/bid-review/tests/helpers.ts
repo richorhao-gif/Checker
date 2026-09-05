@@ -10,6 +10,8 @@ import BidReviewService from '../src/index.ts'
 export interface HarnessOptions {
   readonly maxQualificationsBytes?: number
   readonly maxDocumentBytes?: number
+  /** Company name published to Clients; omitted states none, as a deployment would. */
+  readonly companyName?: string
   /** Existing storage root to reopen; a fresh temp dir when omitted. */
   readonly storageRoot?: string
   /** Existing upload dir; a fresh subdir of the storage root when omitted. */
@@ -37,6 +39,7 @@ export async function setupHarness(options: HarnessOptions = {}): Promise<TestHa
       maxQualificationsBytes: options.maxQualificationsBytes ?? 64,
       maxDocumentBytes: options.maxDocumentBytes ?? 4096,
       uploadsRoot,
+      companyName: options.companyName ?? '',
     })
   } catch (error) {
     await ctx.fiber.dispose()

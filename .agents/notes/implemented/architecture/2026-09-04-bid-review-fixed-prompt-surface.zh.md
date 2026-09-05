@@ -14,9 +14,9 @@ Harness 中没有任何部分承载这一策略。composer bar 会渲染 textare
 
 ## Decision
 
-由两个新包承载该部署，且不改变任何既有包的行为。`@deepseek-ai/dsh-bid-review` 是 Host 服务；`@deepseek-ai/dsh-client-ui-bid-review` 是 web Client 界面。Client Remote 聚合把生成的 `bidReview` 面挂载在 `messageFeedback` 旁边。
+由两个新包承载该部署，且本文描述的 intake 不改变任何既有包的行为。`@deepseek-ai/dsh-bid-review` 是 Host 服务；`@deepseek-ai/dsh-client-ui-bid-review` 是 web Client 界面，其第二个条目——[审卷台](2026-09-05-bid-review-reviewing-desk.md)——持有对话视图格，并需要 `ui-conversation` 中一条页签投影规则。Client Remote 聚合把生成的 `bidReview` 面挂载在 `messageFeedback` 旁边。
 
-Host 服务在 `bidReview` 命名空间下继承 `TypertRemoteService`，并发布四个一元 Remote 方法：`getLimits`、`getQualifications`、`setQualifications` 与 `uploadDocument`。业务拒绝以 `{ ok: true, value }` 或 `{ ok: false, error }` 返回；只有存储与生命周期故障才会 reject。`maxQualificationsBytes`、`maxDocumentBytes` 与 `uploadsRoot` 都是必填 Config 字段，因此部署方声明自己的策略，而不是继承某个常量。Web bundle 设为 64 KiB、100 MiB 与 `dshHomePath('bid-documents')`。
+Host 服务在 `bidReview` 命名空间下继承 `TypertRemoteService`，并发布四个一元 Remote 方法：`getLimits`、`getQualifications`、`setQualifications` 与 `uploadDocument`。业务拒绝以 `{ ok: true, value }` 或 `{ ok: false, error }` 返回；只有存储与生命周期故障才会 reject。`maxQualificationsBytes`、`maxDocumentBytes`、`uploadsRoot` 与 `companyName` 都是必填 Config 字段，因此部署方声明自己的策略与所审核的公司，而不是继承某个常量。Web bundle 设为 64 KiB、100 MiB、`dshHomePath('bid-documents')` 与空的公司名，后者由意见书用自己的红头文案回答。
 
 资格文本存放在 `bid_review` 存储域的一个 global 槽 `{ text, updatedAt }` 中，其中 `updatedAt: 0` 标记从未保存过的记录。所有用户读写同一行，最后提交的保存生效。Web bundle 的 json backend 把它存放在 `dshHomePath('storages')` 下，因此该记录位于服务端并被共享是构造使然，而非依赖约定。
 
