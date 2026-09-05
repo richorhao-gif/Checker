@@ -95,11 +95,24 @@
     - id: session-stats
       name: '@deepseek-ai/dsh-session-stats'
 
-    # Resolve bind host, SSH launch, and display once at boot, then mount the
-    # matching dual-face directory picker. Mount -native or -browse directly in
-    # an overlay to pin the interaction.
+    # Pinned for this fork: it ships as a single-workspace LAN bid-review tool.
+    # `-auto` mounts the directory-picker backend AND its client surface
+    # together; the surface occupies ui-workspace's `directoryFlow` holes and
+    # renders the "Add workspace…" affordance, letting a remote operator browse
+    # and adopt arbitrary server directories. `@deepseek-ai/dsh-host-apiproxy`
+    # injects `directoryPicker` as a required service, so a backend must still
+    # register it or the host tree never activates. Mounting the `-browse`
+    # backend alone satisfies apiproxy while the absent client surface leaves
+    # both `directoryFlow` holes empty, hiding the affordance in the sidebar and
+    # hero; ui-workspace session navigation stays intact. The browser e2e lane
+    # adds only the `-browse` client surface through its own scaffold patch (this
+    # backend already ships in the production roster), so picker tests and
+    # goldens are unaffected.
     - id: directory-picker
       name: '@deepseek-ai/dsh-host-directory-picker-auto'
+      disabled: true
+    - id: directory-picker-browse
+      name: '@deepseek-ai/dsh-host-directory-picker-browse'
 
     # Read-only projection of current Loader entries for trusted client RPCs.
     - id: plugin-inventory

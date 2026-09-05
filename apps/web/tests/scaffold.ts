@@ -73,11 +73,11 @@ import { REPO_ROOT, requireDist } from './support.ts'
 // } from '@deepseek-ai/dsh-client-ui-settings-models'
 export const WELCOME_NOTICE_SETTINGS_NAMESPACE = 'ui-onboarding'
 export const WELCOME_NOTICE_ACK_FIELD = 'welcomeNoticeVersion'
-export const WELCOME_NOTICE_VERSION = '2026-08-13.1'
+export const WELCOME_NOTICE_VERSION = '2026-09-05.1'
 export const WELCOME_NOTICE_COPY = {
   zh: {
-    title: '内测声明',
-    body: 'DeepSeek Harness 目前的 0.1 版本仍处在面向 Harness 开发者进行测试的阶段，还有许多地方需要持续改进和打磨，希望听取广大开发者的反馈建议。预计 DeepSeek Harness 的核心插件以及基础 API 都会在接下来的一段时间内快速迭代、持续演化。\n\n我们期待与全球开发者一起，在开源、开放、可复用、可组合的基础设施之上，共同探索智能上限。欢迎全球 Harness 开发者加入 DSH 插件生态。',
+    title: '欢迎使用标书审核',
+    body: '本工具面向金龙鱼餐饮渠道的标书审核。每次审核上传一份标书文件，系统会先判断标书是否符合公司主营业务范围，再依据公司资格对照招标需求逐项审核，最后输出标书内的评分准则以及相关费用与周期。\n\n审核结论仅供参考，请结合公司资格与招标文件原文复核。',
     continueLabel: '继续',
   },
 } as const
@@ -452,15 +452,16 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
       : [{ id: 'connection', config: { trustedHosts: [options.remoteAuthority] } }],
     { id: 'settings', config: { dshHome: harnessHome } },
     { id: 'credentials', config: { dshHome: harnessHome } },
-    // The shipped directory-picker row is the -auto chooser, which resolves
-    // the interaction from the RUNNING host (display, SSH launch, bind). The
-    // lane's goldens are interaction-specific (workspace-management drives
-    // the in-app browse dialog), so pin -browse deterministically on every
-    // host: patch `name` is an assertion, not an override, hence the
-    // disable+insert pair.
+    // The production roster pins the picker to the -browse backend (the bundle
+    // patch disables the -auto chooser and mounts the host -browse backend in
+    // its place, with no client surface, so the shipped tool hides the
+    // "Add workspace…" affordance). The lane's goldens are interaction-specific
+    // (workspace-management drives the in-app browse dialog), so add only the
+    // -browse client surface production omits; it pairs with the backend
+    // production already mounts, and re-inserting that backend here would
+    // duplicate its loader entry id.
     { id: 'directory-picker', disabled: true },
     { insert: [
-      { id: 'directory-picker-browse', name: '@deepseek-ai/dsh-host-directory-picker-browse' },
       { id: 'ui-directory-picker-browse', name: '@deepseek-ai/dsh-client-ui-directory-picker-browse' },
     ] },
     ...options.agentPresets === undefined

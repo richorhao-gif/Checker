@@ -23,7 +23,7 @@
   overflow: visible;
 }
 
-/* figma 34:10411: fish + title, gap 10, centered; 26/32 wt500. The preview
+/* figma 34:10411: fish + title, gap 10, centered; 26/32 wt500. The channel
    badge is a product addition outside that source: a mono superscript pill
    riding the title's top-right. */
 .headline {
@@ -43,7 +43,7 @@
   grid-column: 2;
 }
 
-.previewBadge {
+.channelBadge {
   grid-row: 1;
   grid-column: 3;
   align-self: start;
@@ -70,9 +70,9 @@
   justify-content: center;
 }
 
-/* Keep the hero mark in the same primary ink as its headline. */
+/* Pivot for the hero-fish-swim hover animation. The brand mark paints fixed
+   fills, so this rule sets no ink for it. */
 .fish {
-  color: var(--dsw-alias-label-primary);
   transform-origin: 50% 60%;
 }
 

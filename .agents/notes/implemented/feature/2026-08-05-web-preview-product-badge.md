@@ -31,3 +31,7 @@ Every new session exposes the same localized preview identity in visual and acce
 ## Testing
 
 The conversation component test covers both localized badge values, and the Web lifecycle snapshots pin the English badge in the assembled empty hero.
+
+## Related
+
+[catering-channel-fork-brand-and-single-workspace](2026-09-05-catering-channel-fork-brand-and-single-workspace.md) — the private catering-channel fork replaces this `Preview` badge with a channel badge in the same hero slot, inheriting the rendering rationale recorded here; the supersession is partial, so both notes stay active.

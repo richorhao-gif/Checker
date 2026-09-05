@@ -54,15 +54,41 @@ describe('ic_ds_ icon set', () => {
   })
 })
 
-describe('FishLogo', () => {
-  it('renders the fish path in currentColor at the native ratio', () => {
-    const { container } = render(<primitives.FishLogo />)
+describe('BrandMark', () => {
+  it('renders the seal square at its native size with fixed brand colors', () => {
+    const { container } = render(<primitives.BrandMark />)
     const svg = container.querySelector('svg')!
     expect(svg.getAttribute('width')).toBe('24')
-    expect(Number(svg.getAttribute('height'))).toBeCloseTo(17.66, 1)
-    expect(svg.getAttribute('viewBox')).toBe('0 0 23.16 17.04')
-    expect(container.querySelectorAll('path')).toHaveLength(1)
-    expect(container.innerHTML).toContain('currentColor')
-    expect(container.innerHTML).not.toContain('M0 0L23.16')
+    expect(svg.getAttribute('height')).toBe('24')
+    expect(svg.getAttribute('viewBox')).toBe('0 0 24 24')
+    expect(svg.getAttribute('aria-hidden')).toBe('true')
+    expect(container.innerHTML).toContain('#C8102E')
+    expect(container.innerHTML).toContain('#D9A441')
+  })
+
+  it('lands size and className on the root svg', () => {
+    const { container } = render(<primitives.BrandMark size={34} className="x" />)
+    const svg = container.querySelector('svg')!
+    expect(svg.getAttribute('width')).toBe('34')
+    expect(svg.getAttribute('height')).toBe('34')
+    expect(svg.classList.contains('x')).toBe(true)
+  })
+})
+
+describe('BrandWordmark', () => {
+  it('renders the mark, company name, and channel badge', () => {
+    const { container, getByText } = render(<primitives.BrandWordmark />)
+    const root = container.firstElementChild!
+    expect(root.getAttribute('aria-hidden')).toBe('true')
+    expect(root.querySelector('svg')).not.toBeNull()
+    expect(getByText('益海嘉里 · 金龙鱼')).toBeTruthy()
+    expect(getByText('餐饮渠道')).toBeTruthy()
+  })
+
+  it('merges an extra className and scales the font off size', () => {
+    const { container } = render(<primitives.BrandWordmark size={40} className="extra" />)
+    const root = container.firstElementChild as HTMLElement
+    expect(root.classList.contains('extra')).toBe(true)
+    expect(root.style.fontSize).toBe('24px')
   })
 })

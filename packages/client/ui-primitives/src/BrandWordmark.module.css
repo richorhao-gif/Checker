@@ -1,0 +1,26 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mark {
+  flex: none;
+}
+
+.name {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: currentColor;
+}
+
+.badge {
+  padding: 0.12em 0.35em;
+  border-radius: 2px;
+  background: currentColor;
+  color: var(--dsw-alias-label-primary-inverted);
+  font-size: 0.62em;
+  font-weight: 600;
+}

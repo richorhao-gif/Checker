@@ -31,3 +31,7 @@ Web 空状态没有标明产品处于预览版阶段。用户可以在未看到�
 ## 测试
 
 会话组件测试覆盖两个本地化徽标值，Web 生命周期快照则固定组装后空状态主视觉区中的英文徽标。
+
+## 相关
+
+[catering-channel-fork-brand-and-single-workspace](2026-09-05-catering-channel-fork-brand-and-single-workspace.md)——私有餐饮渠道 fork 在同一 hero 槽位把该 `Preview` 徽标替换为渠道徽标，并继承此处记录的渲染理由；该取代是部分性的，因此两份 note 都保持活跃。

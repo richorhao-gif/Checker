@@ -20,7 +20,7 @@
 - button "Settings":
   - img
   - text: Settings
-- text: Into the Unknown Preview
+- text: Reviewed with evidence, sealed with confidence Catering Channel · Bid Review
 - button "Choose workspace":
   - img
   - text: workspace
