@@ -18,7 +18,7 @@ Status: implemented
 
 ### 品牌
 
-图形是 `packages/client/ui-primitives/src/BrandMark.tsx`：一枚 24×24 的朱红印章圆盘（`#C8102E`），其上新增金色金龙鱼笔触（`#D9A441`），以固定的呈现色而非 `currentColor` 上色，使其在两套主题下都清晰可辨，并设为 `aria-hidden`。`BrandWordmark.tsx` 以 HTML 方式排布该图形，配上名称「益海嘉里 · 金龙鱼」与一块「餐饮渠道」徽牌；侧栏收窄态使用裸图形，展开态使用字标。
+图形是 `packages/client/ui-primitives/src/BrandMark.tsx`：一枚 24×24 的朱红方形印章（`#C8102E`，圆角 3），内嵌金色边框与一枚金色金龙鱼图形——鱼身、后掠背鳍、分叉尾，以及镂空的鳃线与眼——以固定的呈现色而非 `currentColor` 上色，使其在两套主题下都清晰可辨，并设为 `aria-hidden`。选方印而非圆盘，是因为在侧栏窄轨 16px 的尺寸下，带边框的方形仍读作印章，而圆盘会塌成一个色点。`BrandWordmark.tsx` 以 HTML 方式排布该图形，配上名称「益海嘉里 · 金龙鱼」与一块「餐饮渠道」徽牌；侧栏收窄态使用裸图形，展开态使用字标。
 
 空状态主视觉区把该图形与标题「审之有据 · 落印为凭」/ "Reviewed with evidence, sealed with confidence" 以及渠道徽标「餐饮渠道 · 标书审核」/ "Catering Channel · Bid Review" 搭配呈现。徽标沿用 `Preview` 徽标确立的渲染方式——business-tertiary 背景上一枚等宽字体上标药丸，配可读的 label token，并存在于无障碍标题中——只改变它的 locale key 与身份（`hero.preview` → `hero.channel`，css `previewBadge` → `channelBadge`）。
 

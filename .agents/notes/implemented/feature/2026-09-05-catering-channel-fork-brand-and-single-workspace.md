@@ -18,7 +18,7 @@ The product presents as the catering-channel bid-review tool, and the deployment
 
 ### Brand
 
-The mark is `packages/client/ui-primitives/src/BrandMark.tsx`: a 24×24 vermilion seal disc (`#C8102E`) carrying a gold arowana stroke (`#D9A441`), painted with fixed presentation colors rather than `currentColor` so it reads on both themes, and `aria-hidden`. `BrandWordmark.tsx` lays the mark out as HTML with the name 「益海嘉里 · 金龙鱼」 and a 「餐饮渠道」 badge plate; the sidebar rail uses the bare mark and the wide column uses the wordmark.
+The mark is `packages/client/ui-primitives/src/BrandMark.tsx`: a 24×24 vermilion seal square (`#C8102E`, corner radius 3) with an inset gold border and a gold arowana device — body, swept-back dorsal fin, forked tail, and a knockout gill line and eye — painted with fixed presentation colors rather than `currentColor` so it reads on both themes, and `aria-hidden`. The square chop beats a disc because at the 16px sidebar-rail size a bordered square still reads as a seal while a disc collapses to a dot. `BrandWordmark.tsx` lays the mark out as HTML with the name 「益海嘉里 · 金龙鱼」 and a 「餐饮渠道」 badge plate; the sidebar rail uses the bare mark and the wide column uses the wordmark.
 
 The empty hero pairs the mark with the headline 「审之有据 · 落印为凭」 / "Reviewed with evidence, sealed with confidence" and a channel badge 「餐饮渠道 · 标书审核」 / "Catering Channel · Bid Review". The badge reuses the rendering the `Preview` badge established — a mono superscript pill on the business-tertiary background with a readable label token, present in the accessible headline — and only its locale key and identity change (`hero.preview` → `hero.channel`, css `previewBadge` → `channelBadge`).
 

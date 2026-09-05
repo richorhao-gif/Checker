@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-05-catering-channel-fork-brand-and-single-workspace.md
-2026-09-05-catering-channel-fork-brand-and-single-workspace.md: e3243e5d296322567a647c53e1589a96cd9ac675
-2026-09-05-catering-channel-fork-brand-and-single-workspace.zh.md: a9c291aa3f0acc0707c6bdf31d99351e5686a9da
+2026-09-05-catering-channel-fork-brand-and-single-workspace.md: 1417d646cdb0b71a9ae9ed9e020154c0c3f537e2
+2026-09-05-catering-channel-fork-brand-and-single-workspace.zh.md: b9adfd7ce491bbee8c7aba60d29488fe30872c87
