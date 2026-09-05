@@ -367,6 +367,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'conversation\' (client-ui-conversation), so it exists while that entry is mounted',
     occupants: [
+      'client-ui-bid-review BidReviewComposer',
       'client-ui-conversation InputBar',
     ],
     replaceRisk: 'shadows-shipped-ui',

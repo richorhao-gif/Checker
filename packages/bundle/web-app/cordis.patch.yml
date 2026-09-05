@@ -66,6 +66,15 @@
       config:
         maxNoteBytes: 8192
 
+    # Fixed-question bid review: the one company-wide qualifications record and
+    # the sanitized landing of every uploaded bid document.
+    - id: bid-review
+      name: '@deepseek-ai/dsh-bid-review'
+      config:
+        maxQualificationsBytes: 65536
+        maxDocumentBytes: 104857600
+        uploadsRoot: !!js dshHomePath('bid-documents')
+
     # Browser Session export: `/export` command plus the shared download dialog.
     - id: session-log-download
       name: '@deepseek-ai/dsh-session-log-export'
@@ -245,6 +254,12 @@
     # assistant-message action strip, over the messageFeedback Remote.
     - id: ui-message-feedback
       name: '@deepseek-ai/dsh-client-ui-message-feedback'
+
+    # Bid review: the fixed-question composer that shadows the free-text input
+    # bar (one document per conversation) plus the shared qualifications editor,
+    # over the bidReview Remote.
+    - id: ui-bid-review
+      name: '@deepseek-ai/dsh-client-ui-bid-review'
 
     # Model selection: the /model popupSelect + composer seat over session.models.
     - id: ui-model-selection

@@ -211,7 +211,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     pkg: 'storage-domain',
     title: 'Domain data facility',
     mode: 'core',
-    consumers: ['workspace', 'message-feedback'],
+    consumers: ['workspace', 'message-feedback', 'bid-review'],
     note: 'Waits for every configured backend, then publishes the domain form as one lifecycle-bound service for typed durable state.',
   },
   {
@@ -220,6 +220,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Lifecycle-bound message feedback',
     mode: 'core',
     note: 'Owns local per-assistant-message feedback, lifecycle and target validation, per-item compare-and-set, and the Host unary Remote contract without entering Session history or telemetry.',
+  },
+  {
+    key: 'bidReview',
+    pkg: 'bid-review',
+    title: 'Shared bid-review qualifications and upload intake',
+    mode: 'core',
+    note: 'Owns the one company-wide qualifications record, size-bounded base64 document intake with filename sanitization, and the Host unary Remote contract; it composes no prompt and enters no Session history.',
   },
   {
     key: 'workspaceRegistry',

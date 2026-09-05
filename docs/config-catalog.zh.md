@@ -389,6 +389,26 @@ export type Config = LocalConfig
 
 来源：[`packages/shell/bash-sandbox/src/index.ts:35`](../packages/shell/bash-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-bid-review"></a>
+
+## `@deepseek-ai/dsh-bid-review`
+
+需要：`storageDomain`
+
+```ts config-catalog
+/** Required deployment policy for the shared review flow. */
+export interface Config {
+  /** Maximum UTF-8 byte length accepted for the shared qualifications text. */
+  readonly maxQualificationsBytes: number
+  /** Maximum decoded byte length accepted for one uploaded bid document. */
+  readonly maxDocumentBytes: number
+  /** Absolute directory uploaded documents land in; created on first upload. */
+  readonly uploadsRoot: string
+}
+```
+
+来源：[`packages/bid/bid-review/src/index.ts:42`](../packages/bid/bid-review/src/index.ts)
+
 <a id="deepseek-aidsh-client-connection"></a>
 
 ## `@deepseek-ai/dsh-client-connection`
@@ -3034,6 +3054,7 @@ export interface Config {
 - `@deepseek-ai/dsh-client-modules` — 需要 `webServer` · `loader`（[`packages/client/modules/src/index.ts`](../packages/client/modules/src/index.ts)）
 - `@deepseek-ai/dsh-client-runtime`（[`packages/client/runtime/src/index.ts`](../packages/client/runtime/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-agent-preset`（[`packages/client/ui-agent-preset/src/index.ts`](../packages/client/ui-agent-preset/src/index.ts)）
+- `@deepseek-ai/dsh-client-ui-bid-review`（[`packages/client/ui-bid-review/src/index.ts`](../packages/client/ui-bid-review/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-commands`（[`packages/client/ui-commands/src/index.ts`](../packages/client/ui-commands/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-conversation`（[`packages/client/ui-conversation/src/index.ts`](../packages/client/ui-conversation/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-cordis`（[`packages/extensions/ui-cordis/src/index.ts`](../packages/extensions/ui-cordis/src/index.ts)）

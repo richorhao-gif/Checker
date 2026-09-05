@@ -1929,6 +1929,81 @@
       "doc": "docs/subsystems/feedback.md",
       "symbol": "MessageFeedbackDeleteResult",
       "source": "packages/feedback/message-feedback/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewLimits",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "CompanyQualifications",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewSetQualificationsRequest",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewUploadRequest",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewDocument",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewQualificationsTooLarge",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewFilenameBlank",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewFilenameUnsafe",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewDocumentTooLarge",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewContentInvalid",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewFailure",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewSuccess",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewRejected",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewSetQualificationsResult",
+      "source": "packages/bid/bid-review/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/bid-review.md",
+      "symbol": "BidReviewUploadResult",
+      "source": "packages/bid/bid-review/src/types.ts"
     }
   ]
 }

@@ -385,6 +385,37 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'bidReview',
+    summary: 'Storage-domain service publishing the shared qualifications record and the document-upload landing.',
+    description: 'Storage-domain service publishing the shared qualifications record and the document-upload landing. It never creates or resumes an Agent or Session.',
+    methods: [
+      {
+        signature: '@Remote(\'getLimits\') getLimits(): Promise<BidReviewLimits>',
+        description: 'Read the deployment limits a Client needs before an upload or a save.',
+        parameters: [],
+        returns: 'the frozen configured limits.',
+      },
+      {
+        signature: '@Remote(\'getQualifications\') // oxlint-disable-next-line typescript/require-await -- async keeps an uninitialized domain a rejection, not a synchronous throw async getQualifications(): Promise<CompanyQualifications>',
+        description: 'Read the shared company qualifications.',
+        parameters: [],
+        returns: 'the current record; `updatedAt: 0` before the first save.',
+      },
+      {
+        signature: '@Remote(\'setQualifications\') async setQualifications(request: BidReviewSetQualificationsRequest): Promise<BidReviewSetQualificationsResult>',
+        description: 'Replace the shared company qualifications text, stored verbatim. The empty string clears it. Concurrent saves serialize on the domain write chain; the last committed save wins.',
+        parameters: [{ name: 'request', description: 'replacement text.' }],
+        returns: 'the committed record or `qualifications-too-large`.',
+      },
+      {
+        signature: '@Remote(\'uploadDocument\') async uploadDocument(request: BidReviewUploadRequest): Promise<BidReviewUploadResult>',
+        description: 'Land one uploaded bid document under the configured root. The stored name is a sanitized derivation of the supplied filename behind a fresh UUID, so concurrent uploads never collide and no client string reaches the path.',
+        parameters: [{ name: 'request', description: 'original filename and base64 content.' }],
+        returns: 'the absolute stored path, or the request failure it proves.',
+      },
+    ],
+  },
+  {
     key: 'clientModules',
     summary: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index tap.',
     description: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index tap. Construction runs the activation scan synchronously — a malformed declaration or missing bundle among the already-loaded entries aggregates into one loud throw (FAILED fiber; the boot activation audit reports it).',
@@ -2736,6 +2767,62 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface BashEnvVariableInfo extends BashEnvVariable {\n    contributor: string;\n    key: DshEnvironmentKey;\n}',
   },
   {
+    name: 'BidReviewContentInvalid',
+    declaration: 'export interface BidReviewContentInvalid {\n    readonly code: \'content-invalid\';\n}',
+  },
+  {
+    name: 'BidReviewDocument',
+    declaration: 'export interface BidReviewDocument {\n    readonly path: string;\n}',
+  },
+  {
+    name: 'BidReviewDocumentTooLarge',
+    declaration: 'export interface BidReviewDocumentTooLarge {\n    readonly code: \'document-too-large\';\n    readonly maxBytes: number;\n    readonly actualBytes: number;\n}',
+  },
+  {
+    name: 'BidReviewFailure',
+    declaration: 'export type BidReviewFailure = BidReviewQualificationsTooLarge | BidReviewFilenameBlank | BidReviewFilenameUnsafe | BidReviewDocumentTooLarge | BidReviewContentInvalid;',
+  },
+  {
+    name: 'BidReviewFilenameBlank',
+    declaration: 'export interface BidReviewFilenameBlank {\n    readonly code: \'filename-blank\';\n}',
+  },
+  {
+    name: 'BidReviewFilenameUnsafe',
+    declaration: 'export interface BidReviewFilenameUnsafe {\n    readonly code: \'filename-unsafe\';\n}',
+  },
+  {
+    name: 'BidReviewLimits',
+    declaration: 'export interface BidReviewLimits {\n    readonly maxQualificationsBytes: number;\n    readonly maxDocumentBytes: number;\n}',
+  },
+  {
+    name: 'BidReviewQualificationsTooLarge',
+    declaration: 'export interface BidReviewQualificationsTooLarge {\n    readonly code: \'qualifications-too-large\';\n    readonly maxBytes: number;\n    readonly actualBytes: number;\n}',
+  },
+  {
+    name: 'BidReviewRejected',
+    declaration: 'export interface BidReviewRejected<E extends BidReviewFailure> {\n    readonly ok: false;\n    readonly error: E;\n}',
+  },
+  {
+    name: 'BidReviewSetQualificationsRequest',
+    declaration: 'export interface BidReviewSetQualificationsRequest {\n    readonly text: string;\n}',
+  },
+  {
+    name: 'BidReviewSetQualificationsResult',
+    declaration: 'export type BidReviewSetQualificationsResult = BidReviewSuccess<CompanyQualifications> | BidReviewRejected<BidReviewQualificationsTooLarge>;',
+  },
+  {
+    name: 'BidReviewSuccess',
+    declaration: 'export interface BidReviewSuccess<T> {\n    readonly ok: true;\n    readonly value: T;\n}',
+  },
+  {
+    name: 'BidReviewUploadRequest',
+    declaration: 'export interface BidReviewUploadRequest {\n    readonly filename: string;\n    readonly contentBase64: string;\n}',
+  },
+  {
+    name: 'BidReviewUploadResult',
+    declaration: 'export type BidReviewUploadResult = BidReviewSuccess<BidReviewDocument> | BidReviewRejected<BidReviewFilenameBlank | BidReviewFilenameUnsafe | BidReviewDocumentTooLarge | BidReviewContentInvalid>;',
+  },
+  {
     name: 'Branded',
     declaration: 'export type Branded<B extends string> = string & {\n    readonly [BRAND]: B;\n};',
   },
@@ -2826,6 +2913,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CompactionTrigger',
     declaration: 'export type CompactionTrigger = \'pressure\' | \'context-overflow\';',
+  },
+  {
+    name: 'CompanyQualifications',
+    declaration: 'export interface CompanyQualifications {\n    readonly text: string;\n    readonly updatedAt: number;\n}',
   },
   {
     name: 'ConfinedArgv',
