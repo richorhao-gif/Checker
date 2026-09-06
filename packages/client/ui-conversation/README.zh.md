@@ -26,7 +26,7 @@ Think 行默认保持折叠，并在不展开思维链的情况下暴露实时�
 
 审批通过本包声明的链条接管编辑器：`ApprovalPanel` 注册为按选择器路由的 `'conversation.composer'` 配置项（ui-user-questions 模式），在审批等待未决期间取代 InputBar 占据编辑器（琥珀色条、理由标题、来自运行中调用参数的配对命令行、一次性的拒绝／允许）。`contract/slots.ts` 中的 `PendingApproval` 领域面在运行时 `PendingWait` 载体之上拥有 wire 编码——带审计关联的 `ApprovalResponsePayload` 值；广播的 `approval/resolved` 帧使等待落定并恢复编辑器。运行时 manager 会将所有审批或问题等待通过 `SessionSummary.pendingInteraction` 投影出来，未实例化的会话也不例外；`ui-workspace` 负责其侧边栏呈现。未决等待完全离开消息流：问题（ui-user-questions）与审批（ApprovalPanel）都经编辑器接管作答，不再保留只读占位卡。编辑器底行的 Access 席位挂载 `PermissionSelect`，由 host 计算的 `permissions` 投影经标准工具包 `useProjection` 供数（key 缺席即隐藏 chip）；chip 打开 Menu 原语下拉，其中 kebab-case 预设名渲染为 Title Case 标签；普通安全预设会立即经输入栏注入的 `command` 回调提交 `/permission <preset>`，而 `danger-full-access` 在界面中显示为 `Full access`，选择后先打开页面内的 Modal 风险确认。用户勾选确认项前启用按钮始终不可用；取消、Escape、关闭按钮与点击遮罩都不会提交命令。
 
-`TodoDock` 以 `order: 0` 占用 `'conversation.input.dock'` 列表 slot（位于 Goal 与 Queue 之前），作为计划条读取 host 计算的 `todos` 投影（当前计划：其后没有更晚 `turn/start` 的最近一次 `todo/write`）并渲染 `TodoPanel`。面板接收纯列表，列表为空时自我隐藏；列表非空时默认折叠，表头显示标题及以 `·` 连接的各状态计数（如 `1 已完成 · 2 进行中 · 1 待处理`，省略零计数）。dock adapter 拥有 selection，因此面板保持为 props 的纯函数。输入区 composer 链隐藏的一切也会隐藏整个 dock。`todo_write` 工具行属于 [`ui-tool`](../ui-tool/README.md)。
+`TodoDock` 以 `order: 0` 占用 `'conversation.input.dock'` 列表 slot（位于 Goal 与 Queue 之前），作为计划条读取 host 计算的 `todos` 投影（当前计划：其后没有更晚 `turn/start` 的最近一次 `todo/write`）并渲染 `TodoPanel`。面板接收纯列表，列表为空时自我隐藏；列表非空时默认折叠，表头显示标题及以 `·` 连接的各状态计数（如 `1 已完成 · 2 进行中 · 1 待处理`，省略零计数）。dock adapter 拥有 selection，并从它作为 owner prop 已经拿到的会话快照派生计划条的姿态，因此面板保持为 props 的纯函数。姿态有三值：`live` 是 Host 报告有轮次在跑，此时 `in_progress` 圈旋转；`settled` 是已加载窗口内最高那一轮正常结束，此时每个仍未打勾的条目都渲染成已完成，表头塌缩为只剩已完成计数；`halted` 是那一轮留下 `turn-error`、`turn-max-tokens` 或被中断冻结的 assistant 节点，或 Host 已删除该会话，此时保留每个条目的真实状态、圈静止不转，并把进行中一段替换为 `N 已停止`（[决策](../../../.agents/notes/implemented/bug-fix/2026-09-06-todo-strip-settled-posture.md)）。每行的 `data-status` 始终携带模型写下的状态；派生读数另行发布为面板根上的 `data-posture`，它同时也是 CSS 用来限定圈动画的选择器。输入区 composer 链隐藏的一切也会隐藏整个 dock。`todo_write` 工具行属于 [`ui-tool`](../ui-tool/README.md)。
 
 `QueueDock` 是 `order: 20` 的末端 input-dock 条目。队列为空时隐藏；只有一个待处理项时直接渲染该行；存在两个或更多待处理项时，默认收起为 `"<n> 条排队消息"` 表头，其按钮可展开或收起完整列表。表头暴露 `aria-expanded` 和 `aria-controls`；展开后的列表以 180px 为高度上限，并可滚动。存在进行中的编辑或变更时，列表行会保持可见；队列清空后，下一次出现队列时会恢复默认收起状态。普通会话中的每条可见行仍是单行预览，并提供针对精确单次入队项的编辑、删除和严格 steering 操作；已寻址 subagent 则保留只读行，因为其继续执行传输不提供 Queue 变更。如果严格 steering 输给已关闭的窗口，原单次入队项会留在 Queue 中正常投递；如果驱动器已经认领该项，正常投递就已开始。这两种已收敛的竞态都不显示失败，传输和未知错误仍会显示。
 
@@ -63,5 +63,7 @@ Host 带 placement 的 `session/queue` 快照也会携带待处理 steering。Qu
 - **others 工具行的闪光图标是手绘近似版本**：无法在本地导出设计字形的矢量几何；等到存在精确导出后再将其提升到 ui-primitives。
 - **审批面板的「始终允许此类」暂缓**：持久授权需要授权存储设计；今天只能回答允许一次／拒绝。
 - **TodoPanel 将过长条目截成单行省略号**：figma 条没有换行或展开入口，完整文本无法在行内读完。
+- **计划条在已加载窗口找不到自己那一轮的边界时保持 `live`**：`todos` 投影折叠整份日志，而姿态只读已加载窗口内的轮次边界，所以一个无法显示那一轮已结束的窗口会让圈继续转，而不是宣称一个视图中毫无证据的落定。
+- **计划条的转圈不响应 `prefers-reduced-motion`**：轮次运行期间 `in_progress` 圈无条件动画，因此在系统里要求减少动态效果的用户仍会看到它。
 - **Queue 编辑仅支持文本**：包含非文本块的行仍显示扁平化预览，但由于内联编辑器无法保留这些块，其编辑控件会被禁用。文本行进入编辑模式后，删除和严格 steering 操作会被保存和取消取代；Enter 保存，Escape 取消。
 - **Queue 严格 steering 会保留完整消息**：agent 运行期间，steering 操作会以原子方式把所寻址的 Queue 单次入队项转移到当前 next-step 窗口。包含混合内容的行仍可使用此操作，因为它会转发不可变消息，而非文本投影。带 placement 的 Host 快照会在会话流末尾渲染待处理 steering，直到已消费的 `user/message` 折叠进持久 transcript（文本记录），因此立即展示、重连和回放共享同一个线性权威。

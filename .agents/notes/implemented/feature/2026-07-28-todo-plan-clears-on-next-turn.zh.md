@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决策
 
-常驻计划是其后没有更晚 `turn/start` 的最近一次 `todo/write`。`turn/end` 保留列表可见，以便用户阅读回答时仍能看到刚完成的清单；下一次 `turn/start` 将其清空，直至模型再次写入。
+常驻计划是其后没有更晚 `turn/start` 的最近一次 `todo/write`。`turn/end` 保留列表可见，以便用户阅读回答时仍能看到刚完成的清单；下一次 `turn/start` 将其清空，直至模型再次写入。清单在越过自己那一轮仍可见期间，web 计划条按那一轮留下的样子渲染它——轮次正常结束即为已完成，没有正常结束即为已停止（[已结束姿态](../bug-fix/2026-09-06-todo-strip-settled-posture.md)）。
 
 ### 宿主投影（web）
 

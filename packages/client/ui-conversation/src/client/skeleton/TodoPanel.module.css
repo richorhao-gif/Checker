@@ -128,6 +128,11 @@
 
 .glyphProgress {
   color: var(--dsw-alias-state-business-primary);
+}
+
+/* Only a live turn spins: the panel publishes its derived posture on its own
+   root, so the ring cannot outlive the turn that opened it. */
+[data-posture='live'] .glyphProgress {
   animation: todo-progress-spin 1s linear infinite;
 }
 

@@ -2,8 +2,9 @@
 // plan panel). Renders the standing todo/write whole-list snapshot (cleared on
 // the next turn/start) — no data of its own, hidden while the list is empty.
 // Mounted through the 'conversation.input.dock' slot (QueueDock posture): the
-// dock adapter does the selecting, so the panel takes the plain list and stays
-// framework-free. Visual: figma 772:51905 / 772:52972 / 772:53419.
+// dock adapter does the selecting and derives the posture, so the panel takes
+// the plain list and a plain posture and stays framework-free.
+// Visual: figma 772:51905 / 772:52972 / 772:53419.
 
 import { useId, useState } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
@@ -15,11 +16,14 @@ import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots
 import type { TodoItem } from '@deepseek-ai/dsh-tool-todo/client'
 import { IconChecklistOutline14, IconChevronDownOutline14, IconChevronUpOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { NS } from '../locales.ts'
+import { deriveTodoPosture, type TodoPosture } from './todo-posture.ts'
 import css from './TodoPanel.module.css'
 
 export interface TodoPanelProps {
   /** The session's current plan (empty renders nothing) — selected by the dock adapter. */
   todos: readonly TodoItem[]
+  /** Whether the turn that wrote this list is still running — derived by the dock adapter. */
+  posture: TodoPosture
   /** The dock entry's locale seat, passed down as a plain prop. */
   t: TodoDockProps['t']
 }
@@ -68,36 +72,56 @@ function PendingGlyph() {
   )
 }
 
-function StatusGlyph({ status }: { status: TodoItem['status'] }) {
-  switch (status) {
+/**
+ * How one item's status reads under a posture.
+ *
+ * A settled turn reports its whole plan as done: the loop ends when the model
+ * emits text with no tool call, so an item whose deliverable is that text can
+ * never be ticked by the model itself. A halted turn keeps every real status,
+ * because nothing was finished.
+ * @param status - the status the model wrote.
+ * @param posture - the posture derived from the session.
+ * @returns the status to render.
+ */
+function displayStatus(status: TodoItem['status'], posture: TodoPosture): TodoItem['status'] {
+  return posture === 'settled' ? 'completed' : status
+}
+
+function StatusGlyph({ status, posture }: { status: TodoItem['status']; posture: TodoPosture }) {
+  const shown = displayStatus(status, posture)
+  switch (shown) {
     case 'completed': return <CompletedGlyph />
     case 'in_progress': return <ProgressGlyph />
     case 'pending': return <PendingGlyph />
     /* v8 ignore next -- closed TodoItem status union */
-    default: return assertNever(status)
+    default: return assertNever(shown)
   }
 }
 
 /** Header summary: "·"-joined per-status counts; zero-count segments are omitted as noise (a non-empty list keeps at least one). */
-function progressLabel(todos: readonly TodoItem[], t: TodoPanelProps['t']): string {
-  const done = todos.filter(item => item.status === 'completed').length
-  const active = todos.filter(item => item.status === 'in_progress').length
-  const pending = todos.length - done - active
+function progressLabel(todos: readonly TodoItem[], posture: TodoPosture, t: TodoPanelProps['t']): string {
+  const shown = todos.map(item => displayStatus(item.status, posture))
+  const done = shown.filter(status => status === 'completed').length
+  const active = shown.filter(status => status === 'in_progress').length
+  const pending = shown.length - done - active
+  // A halted turn still holds items the model left open, but calling them
+  // in progress is the same claim the frozen ring already retracted.
+  const activeKey = posture === 'halted' ? 'todo.progress.stopped' : 'todo.progress.active'
   // En spaces (U+2002): HTML collapses runs of ASCII spaces, so widening the
   // separator breathing room needs a literal wide space.
   return [
     ...done > 0 ? [t('todo.progress.done', { done })] : [],
-    ...active > 0 ? [t('todo.progress.active', { active })] : [],
+    ...active > 0 ? [t(activeKey, { active })] : [],
     ...pending > 0 ? [t('todo.progress.pending', { pending })] : [],
   ].join('\u2002·\u2002')
 }
 
-export function TodoPanel({ todos, t }: TodoPanelProps) {
+export function TodoPanel({ todos, posture, t }: TodoPanelProps) {
   const [collapsed, setCollapsed] = useState(true)
   if (todos.length === 0) return null
 
   return (
-    <section className={css.root} data-testid="todo-panel" aria-label={t('todo.title')}>
+    <section className={css.root} data-testid="todo-panel" data-posture={posture} aria-label={t('todo.title')}>
       <div className={css.body}>
         <button
           type="button"
@@ -107,16 +131,18 @@ export function TodoPanel({ todos, t }: TodoPanelProps) {
         >
           <span className={css.lead} aria-hidden><IconChecklistOutline14 /></span>
           <span className={css.title}>{t('todo.title')}</span>
-          <span className={css.progress}>{progressLabel(todos, t)}</span>
+          <span className={css.progress}>{progressLabel(todos, posture, t)}</span>
           <span className={css.chevron} aria-hidden>
             {collapsed ? <IconChevronUpOutline14 /> : <IconChevronDownOutline14 />}
           </span>
         </button>
         {!collapsed && (
           <ul className={css.list}>
+            {/* data-status stays the model's own record: the posture is a
+                derived reading, published separately on the panel root. */}
             {todos.map(item => (
               <li key={item.content} className={css.item} data-status={item.status}>
-                <span className={css.glyph} aria-hidden><StatusGlyph status={item.status} /></span>
+                <span className={css.glyph} aria-hidden><StatusGlyph status={item.status} posture={posture} /></span>
                 <span className={css.content}>{item.content}</span>
               </li>
             ))}
@@ -130,10 +156,22 @@ export function TodoPanel({ todos, t }: TodoPanelProps) {
 /** Full props of a dock entry: InputZone owner share + session standard kit + global seat + the locale seat. */
 export type TodoDockProps = PropsRuntime<'conversation.input.dock'> & PropsLocale<'conversation'>
 
-/** Dock adapter: reads the host-computed 'todos' projection (whole list; absent or null renders nothing). */
-export function TodoDock({ useProjection, t }: TodoDockProps) {
+/**
+ * Dock adapter: reads the host-computed 'todos' projection (whole list; absent
+ * or null renders nothing) and derives the posture from the owner share's
+ * session snapshot — the contract forbids a dock entry from subscribing, so
+ * the snapshot it already receives is the only source it may read.
+ */
+export function TodoDock({ session, useProjection, t }: TodoDockProps) {
   const todos = useProjection('todos')
-  return <TodoPanel todos={todos ?? []} t={t} />
+  const posture = deriveTodoPosture({
+    removed: session.removed,
+    running: session.running,
+    nodes: session.nodes,
+    turnTimings: session.turnTimings,
+    turnEnds: session.turnEnds,
+  })
+  return <TodoPanel todos={todos ?? []} posture={posture} t={t} />
 }
 
 /**

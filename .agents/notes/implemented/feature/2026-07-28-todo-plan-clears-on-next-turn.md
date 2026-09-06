@@ -10,7 +10,7 @@ English | [中文](2026-07-28-todo-plan-clears-on-next-turn.zh.md)
 
 ## Decision
 
-The standing plan is the latest `todo/write` that is not followed by a later `turn/start`. `turn/end` keeps the list visible so the finished checklist remains while the user reads the answer; the next `turn/start` clears it until the model writes again.
+The standing plan is the latest `todo/write` that is not followed by a later `turn/start`. `turn/end` keeps the list visible so the finished checklist remains while the user reads the answer; the next `turn/start` clears it until the model writes again. While the list remains visible past its own turn, the web strip renders it as that turn left it — finished when the turn ended cleanly, stopped when it did not ([settled posture](../bug-fix/2026-09-06-todo-strip-settled-posture.md)).
 
 ### Host projection (web)
 
