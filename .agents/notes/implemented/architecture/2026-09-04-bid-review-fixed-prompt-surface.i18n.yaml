@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-04-bid-review-fixed-prompt-surface.md
-2026-09-04-bid-review-fixed-prompt-surface.md: 9bd056ef1433f223f93987a8bd83f65676380281
-2026-09-04-bid-review-fixed-prompt-surface.zh.md: 9fb7371f4b8e5b8e3ed1f1f1cf420060ad316b8b
+2026-09-04-bid-review-fixed-prompt-surface.md: 016ec90edcd1d5b8410346aeff34ddf933f8a881
+2026-09-04-bid-review-fixed-prompt-surface.zh.md: 0655165d17b0b48b37316486e790fcdb622331b3

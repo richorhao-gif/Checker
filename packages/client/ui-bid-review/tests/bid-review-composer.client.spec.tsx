@@ -18,7 +18,7 @@ import type { BidReviewLimits, CompanyQualifications } from '@deepseek-ai/dsh-bi
 import { BidReviewComposer } from '../src/client/BidReviewComposer.tsx'
 import type { Outcome, ReviewFailure } from '../src/client/remote.ts'
 import type { StoredDocument } from '../src/client/document.ts'
-import { BID_REVIEW_PRESET_QUESTION } from '../src/client/prompt.ts'
+import { BID_REVIEW_PRESET_QUESTION, BID_REVIEW_VERDICT_CONTRACT } from '../src/client/prompt.ts'
 import { formatBytes } from '../src/client/format.ts'
 import { zh } from '../src/client/locales.ts'
 import css from '../src/client/BidReviewComposer.module.css'
@@ -388,7 +388,8 @@ describe('submitting the fixed question', () => {
     fireEvent.click(ui.submit())
 
     await waitFor(() => { expect(ui.inputActions?.setDraft).toHaveBeenCalledWith(
-      `${BID_REVIEW_PRESET_QUESTION}\n\n标书文件：${DOC.path}\n\n公司资格：\n${FILLED.text}`,
+      `${BID_REVIEW_PRESET_QUESTION}\n\n${BID_REVIEW_VERDICT_CONTRACT}`
+      + `\n\n标书文件：${DOC.path}\n\n公司资格：\n${FILLED.text}`,
     ) })
     expect(ui.inputActions?.submit).toHaveBeenCalledTimes(1)
   })

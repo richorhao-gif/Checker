@@ -40,7 +40,7 @@ const LIMITS: BidReviewLimits = {
   maxQualificationsBytes: 64 * 1024, maxDocumentBytes: 100 * 1024 * 1024, companyName: '',
 }
 const FILLED: CompanyQualifications = { text: '蔬菜配送资质', updatedAt: UPDATED_AT }
-const REPORT = '不符合。供应商资格要求 ISO22000 认证，公司资格记录中仅有 HACCP。'
+const REPORT = '判定：不符合\n\n供应商资格要求 ISO22000 认证，公司资格记录中仅有 HACCP。'
 
 // Fixtures carry only the fields the desk reads.
 const userNode = (content: string, time = 1000): ConversationNode =>
@@ -351,7 +351,9 @@ describe('the seal and the opinion sheet', () => {
       + ` · ${t('desk.doc.basis', { time: formatTimestamp(UPDATED_AT) })}`)).toBeTruthy()
     expect(ui.getByText(t('desk.doc.number', { id: '0001' }))).toBeTruthy()
     expect(ui.seal()?.textContent).toContain(zh['desk.seal.reject'])
-    expect(ui.container.textContent).toContain(REPORT)
+    // The declaration the seal read stays in the body: it is the model's own word.
+    expect(ui.container.textContent).toContain('判定：不符合')
+    expect(ui.container.textContent).toContain('供应商资格要求 ISO22000 认证，公司资格记录中仅有 HACCP。')
     expect(ui.container.textContent).toContain(chineseDate(ENDED_AT))
     // The letterhead and the basis line are the deployment's own words.
     expect(ui.readLimits).toHaveBeenCalledTimes(1)
@@ -404,20 +406,45 @@ describe('the seal and the opinion sheet', () => {
   })
 
   it('seals in the ink green of a passed review', async () => {
-    const ui = mount({ snapshot: sealedSnapshot('符合。评分准则如下。') })
+    const ui = mount({ snapshot: sealedSnapshot('判定：符合\n\n评分准则如下。') })
 
     await waitFor(() => { expect(ui.seal()?.textContent).toContain(zh['desk.seal.pass']) })
     expect(ui.seal()?.className).toContain(css.sealInk as string)
   })
 
   it('seals the marked-up board in the same ink green', async () => {
-    const ui = mount({ snapshot: sealedSnapshot('符合。评分准则如下。') })
+    const ui = mount({ snapshot: sealedSnapshot('判定：符合\n\n评分准则如下。') })
     await waitFor(() => { expect(ui.sheet()).toBeTruthy() })
 
     fireEvent.click(ui.getByText(zh['desk.flip.toBoard']))
 
     expect(ui.seal()?.className).toContain(css.sealCorner as string)
     expect(ui.seal()?.className).toContain(css.sealInk as string)
+  })
+
+  it('seals a fact still to be verified in the amber that waits on a person', async () => {
+    const ui = mount({ snapshot: sealedSnapshot('判定：待核验\n\n缺少北京配送车辆的证明。') })
+
+    await waitFor(() => { expect(ui.seal()?.textContent).toContain(zh['desk.seal.unverified']) })
+    expect(ui.seal()?.className).toContain(css.sealHold as string)
+  })
+
+  it('seals the marked-up board in the same amber', async () => {
+    const ui = mount({ snapshot: sealedSnapshot('判定：待核验\n\n缺少北京配送车辆的证明。') })
+    await waitFor(() => { expect(ui.sheet()).toBeTruthy() })
+
+    fireEvent.click(ui.getByText(zh['desk.flip.toBoard']))
+
+    expect(ui.seal()?.className).toContain(css.sealCorner as string)
+    expect(ui.seal()?.className).toContain(css.sealHold as string)
+  })
+
+  it('seals the declaration alone, not the conditional a body paragraph raises', async () => {
+    const ui = mount({ snapshot: sealedSnapshot('判定：符合\n\n若这两项无法落实，判定为不符合资格。') })
+
+    await waitFor(() => { expect(ui.seal()?.textContent).toContain(zh['desk.seal.pass']) })
+    expect(ui.seal()?.className).toContain(css.sealInk as string)
+    expect(ui.seal()?.className).not.toContain(css.sealHold as string)
   })
 
   it('shrinks the seal word under the copy that spells it out', async () => {
@@ -429,10 +456,12 @@ describe('the seal and the opinion sheet', () => {
     expect(ui.sealWord()?.className).toContain(css.sealSmall as string)
   })
 
-  it('seals without a verdict when the report commits to neither word', async () => {
+  it('seals without a verdict when the sheet declares none', async () => {
     const ui = mount({ snapshot: sealedSnapshot('评分准则如下。') })
 
     await waitFor(() => { expect(ui.seal()?.textContent).toContain(zh['desk.seal.none']) })
+    expect(ui.seal()?.className).not.toContain(css.sealInk as string)
+    expect(ui.seal()?.className).not.toContain(css.sealHold as string)
   })
 
   it('says so when the finished review left no text', async () => {

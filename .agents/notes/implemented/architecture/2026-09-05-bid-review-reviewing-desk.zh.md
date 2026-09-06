@@ -4,6 +4,8 @@ Status: implemented
 
 [English](2026-09-05-bid-review-reviewing-desk.md) | 中文
 
+> 遮蔽注册、派生姿态、替身纸面与意见书自己的读取都仍然有效。印章先搜「不符合」再搜「符合」的全文扫描被[判定声明行](../bug-fix/2026-09-06-bid-verdict-declaration-line.md)取代：它只读意见书头部的一行 `判定：`，并把「待核验」加为第三个结论。
+
 ## Problem
 
 固定问题标书审核（[intake Agent Note](2026-09-04-bid-review-fixed-prompt-surface.md)）提交一条 prompt，然后把屏幕交给普通转录。对该部署而言转录是错误的界面：它把工具头、流式正文与推理交织成一段需要审核人自行解读的滚动内容，而审核人只问两件事——审核还在跑吗，结论是什么。该部署也没有第二个页面可以放报告，因为一个会话只受理一份文件与一个问题。

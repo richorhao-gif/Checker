@@ -4,6 +4,8 @@ Status: implemented
 
 [English](2026-09-04-bid-review-fixed-prompt-surface.md) | 中文
 
+> 固定问题仍是 `prompt.ts` 里的字面产品文案，而不是词典条目。它现在与第二段固定文案一起提交——意见书的输出契约——由[判定声明行](../bug-fix/2026-09-06-bid-verdict-declaration-line.md)按同一条规则加入，也带着同一条不可本地化的局限。
+
 ## Problem
 
 一家公司在服务器上运行一个 Web Host，供多名局域网用户使用，而这些用户不得输入自由文本消息。唯一可受理的请求是：针对恰好一个上传的标书文件提出一个固定审核问题，并以全公司共享的一份资格文本作为判断依据。

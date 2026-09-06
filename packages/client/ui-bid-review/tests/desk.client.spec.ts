@@ -2,7 +2,7 @@
  * The reviewing desk's derivations. These specs pin the two things the surface
  * promises: every posture is read out of the Session snapshot alone, and the
  * values it paints are the log's own — the settled tool calls behind the page
- * marks, the last turn's span behind the timer, the model's own closing words
+ * marks, the last turn's span behind the timer, the model's own declaration line
  * behind the seal.
  */
 import { describe, expect, it } from 'vitest'
@@ -11,7 +11,7 @@ import type { BidReviewLimits, CompanyQualifications } from '@deepseek-ai/dsh-bi
 import type { DeskFacts, DeskView } from '../src/client/desk.ts'
 import {
   basisOf, deriveDesk, deskElapsed, deskTicks, docNumberOf, documentName, dotTone, letterheadOf,
-  noteKey, sealKey, sheetFilename, sheetText, stageKey, verdictOf,
+  noteKey, sealInk, sealKey, sheetFilename, sheetText, stageKey, verdictOf,
 } from '../src/client/desk.ts'
 import type { Outcome } from '../src/client/remote.ts'
 import { buildBidReviewPrompt } from '../src/client/prompt.ts'
@@ -134,13 +134,13 @@ describe('deriveDesk postures', () => {
 
   it('seals once the last turn ended', () => {
     const view = deriveDesk(facts({
-      nodes: [userNode(PROMPT), toolResultNode(2), assistantNode('不符合：认证不足', 3)],
+      nodes: [userNode(PROMPT), toolResultNode(2), assistantNode('判定：不符合\n\n认证不足', 3)],
       turnTimings: new Map([[1, { startTime: 5000, endTime: 9000 }]]),
     }))
 
     expect(view.stage).toBe('sealed')
     expect(view.endedAt).toBe(9000)
-    expect(view.report).toBe('不符合：认证不足')
+    expect(view.report).toBe('判定：不符合\n\n认证不足')
     expect(view.verdict).toBe('reject')
   })
 
@@ -207,11 +207,11 @@ describe('deriveDesk values', () => {
         assistantNode('先看主营业务', 2),
         assistantNode('', 3),
         assistantNode('   ', 4),
-        assistantNode('符合。评分准则如下', 5),
+        assistantNode('判定：符合\n\n评分准则如下', 5),
       ],
     }))
 
-    expect(view.report).toBe('符合。评分准则如下')
+    expect(view.report).toBe('判定：符合\n\n评分准则如下')
     expect(view.verdict).toBe('pass')
   })
 
@@ -340,12 +340,33 @@ describe('docNumberOf', () => {
 })
 
 describe('verdictOf', () => {
-  it('rejects on any 不符合, wherever it sits', () => {
-    expect(verdictOf('主营业务符合，但供应商资格不符合')).toBe('reject')
+  it('seals the three declarations the output contract admits', () => {
+    expect(verdictOf('判定：不符合\n\n供应商资格要求 ISO22000 认证。')).toBe('reject')
+    expect(verdictOf('判定：待核验\n\n缺少北京配送车辆的证明。')).toBe('unverified')
+    expect(verdictOf('判定：符合\n\n评分准则如下。')).toBe('pass')
   })
 
-  it('passes on 符合 alone and stays uncommitted without either word', () => {
-    expect(verdictOf('符合招标需求')).toBe('pass')
+  it('reads a declaration through Markdown emphasis and a halfwidth colon', () => {
+    expect(verdictOf('**判定：不符合**\n\n理由如下。')).toBe('reject')
+    expect(verdictOf('# 判定：待核验')).toBe('unverified')
+    expect(verdictOf('判定: 符合')).toBe('pass')
+  })
+
+  it('commits to nothing when the declaration says any other word', () => {
+    // A qualified word is the softening the contract forbids, not a verdict.
+    expect(verdictOf('判定：基本符合')).toBe('none')
+    // The sentence that made two runs over one tender seal opposite verdicts.
+    expect(verdictOf('第二步判定：不是简单的不符合，而是主体与资质符合，但有 4 项资格硬指标无法证实')).toBe('none')
+  })
+
+  it('reads the head alone, so a conditional in the body seals nothing', () => {
+    expect(verdictOf('判定：符合\n\n若这两项无法落实，判定为不符合资格。')).toBe('pass')
+    expect(verdictOf(`${'标题\n'.repeat(7)}判定：不符合`)).toBe('reject')
+    expect(verdictOf(`${'标题\n'.repeat(8)}判定：不符合`)).toBe('none')
+  })
+
+  it('commits to nothing without a declaration, as the records predating the contract do', () => {
+    expect(verdictOf('主营业务符合，但供应商资格不符合')).toBe('none')
     expect(verdictOf('评分准则如下')).toBe('none')
     expect(verdictOf(null)).toBe('none')
   })
@@ -379,9 +400,18 @@ describe('the desk copy decisions', () => {
   it('keys the seal by verdict and the note by the wait kind', () => {
     expect(sealKey('reject')).toBe('desk.seal.reject')
     expect(sealKey('pass')).toBe('desk.seal.pass')
+    expect(sealKey('unverified')).toBe('desk.seal.unverified')
     expect(sealKey('none')).toBe('desk.seal.none')
     expect(noteKey({ toolName: 'Pwsh', reason: null })).toBe('desk.note.approval')
     expect(noteKey({ toolName: null, reason: null })).toBe('desk.note.question')
+  })
+
+  it('inks the seal by verdict', () => {
+    expect(sealInk('pass')).toBe('mo')
+    // A fact still to be verified waits on a person, so it carries the desk's amber.
+    expect(sealInk('unverified')).toBe('amber')
+    expect(sealInk('reject')).toBe('zhu')
+    expect(sealInk('none')).toBe('zhu')
   })
 
   it('heads the sheet with the configured company name only', () => {

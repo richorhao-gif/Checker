@@ -38,8 +38,16 @@ export type DeskStage =
 /** What a running turn is doing, read from the live snapshot alone. */
 export type DeskActivity = 'tool' | 'writing' | 'thinking'
 
-/** The seal's verdict, read from the model's own closing words. */
-export type DeskVerdict = 'reject' | 'pass' | 'none'
+/** The seal's verdict, read from the sheet's own declaration line. */
+export type DeskVerdict =
+  /** The declaration says 不符合. */
+  | 'reject'
+  /** The declaration says 符合. */
+  | 'pass'
+  /** The declaration says 待核验: a hard requirement the shared record neither confirms nor refutes. */
+  | 'unverified'
+  /** The sheet's head declares none of the three, so the seal commits to nothing. */
+  | 'none'
 
 /** One page-margin mark: a settled tool call placed on the paper's height. */
 export interface DeskTick {
@@ -219,17 +227,31 @@ function stageOf(facts: DeskFacts, endedAt: number | null, failed: boolean): Des
   return endedAt === null ? 'waiting' : 'sealed'
 }
 
+/** Sheet-head lines the verdict declaration is searched in; the contract puts it first. */
+const VERDICT_HEAD_LINES = 8
+
+/** The declaration line: `判定：` followed by exactly one of the three words. */
+const VERDICT_LINE = /判定[：:]\s*(不符合|待核验|符合)/
+
 /**
- * Read the verdict the seal carries out of the model's own closing words. Any
- * `不符合` in the report rejects; otherwise a `符合` passes; a report that says
- * neither leaves the seal uncommitted rather than guessing one.
+ * Read the verdict the seal carries out of the sheet's own declaration line,
+ * the one the submitted contract requires at the head of the report. Only the
+ * head is searched and only an exact word commits: scanning the whole report
+ * for 不符合 read a quoted requirement, a conditional, or a self-negating
+ * sentence as the conclusion, so two runs over one tender sealed opposite
+ * verdicts on identical findings. A qualified word such as 基本符合 declares
+ * none of the three and leaves the seal uncommitted rather than guessing one.
  * @param report - the closing assistant message's text, null when there is none.
  * @returns the verdict the seal renders.
  */
 export function verdictOf(report: string | null): DeskVerdict {
   if (report === null) return 'none'
-  if (report.includes('不符合')) return 'reject'
-  return report.includes('符合') ? 'pass' : 'none'
+  // Emphasis is stripped for the read alone; the rendered body keeps the model's own markup.
+  const head = report.split('\n', VERDICT_HEAD_LINES).join('\n').replace(/[*`]/g, '')
+  const word = VERDICT_LINE.exec(head)?.[1]
+  if (word === '不符合') return 'reject'
+  if (word === '待核验') return 'unverified'
+  return word === '符合' ? 'pass' : 'none'
 }
 
 /**
@@ -391,7 +413,29 @@ export function sealKey(verdict: DeskVerdict): BidReviewKey {
   switch (verdict) {
     case 'reject': return 'desk.seal.reject'
     case 'pass': return 'desk.seal.pass'
+    case 'unverified': return 'desk.seal.unverified'
     case 'none': return 'desk.seal.none'
+    /* v8 ignore next -- closed verdict union */
+    default: return assertNever(verdict)
+  }
+}
+
+/** The seal's ink: the desk's one color word for its verdict. */
+export type DeskSealInk = 'zhu' | 'mo' | 'amber'
+
+/**
+ * Ink of the seal for one verdict. A pass is ink green and a fact still to be
+ * verified is the amber the desk already spends on a wait, because both are
+ * outstanding; a rejection and a sheet that declares nothing stay vermilion.
+ * @param verdict - verdict read out of the report.
+ * @returns the ink the seal carries.
+ */
+export function sealInk(verdict: DeskVerdict): DeskSealInk {
+  switch (verdict) {
+    case 'pass': return 'mo'
+    case 'unverified': return 'amber'
+    case 'reject':
+    case 'none': return 'zhu'
     /* v8 ignore next -- closed verdict union */
     default: return assertNever(verdict)
   }

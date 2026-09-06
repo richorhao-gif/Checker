@@ -17,10 +17,10 @@ import { MarkdownText, writeClipboard } from '@deepseek-ai/dsh-client-ui-primiti
 import type { BidReviewLimits, CompanyQualifications } from '@deepseek-ai/dsh-bid-review/types'
 import type { ReviewDeskProps } from './slots.ts'
 import type { Outcome } from './remote.ts'
-import type { DeskFacts } from './desk.ts'
+import type { DeskFacts, DeskSealInk } from './desk.ts'
 import {
   basisOf, deriveDesk, deskElapsed, docNumberOf, documentName, dotTone, letterheadOf, noteKey,
-  sealKey, sheetFilename, sheetText, stageKey,
+  sealInk, sealKey, sheetFilename, sheetText, stageKey,
 } from './desk.ts'
 import { chineseDate, formatElapsed, formatTimeOfDay, formatTimestamp } from './format.ts'
 import { downloadText } from './output.ts'
@@ -98,15 +98,22 @@ function PaperRows({ read }: { read: number }) {
   )
 }
 
+/** Class per seal ink; vermilion is the seal's own base, so it adds none. */
+const SEAL_INK_CLASS: Record<DeskSealInk, string | undefined> = {
+  zhu: undefined, mo: css.sealInk, amber: css.sealHold,
+}
+
 /**
  * The desk's stamped seal: the verdict word under its label, shrunk for copy
- * longer than four characters and inked green on a pass.
- * @param props - placement class, whether the verdict passes, and the two copy lines.
+ * longer than four characters and inked per the verdict it stamps.
+ * @param props - placement class, ink class, and the two copy lines.
  * @returns the seal.
  */
-function Seal({ place, pass, top, label }: { place: string | undefined; pass: boolean; top: string; label: string }) {
+function Seal(
+  { place, ink, top, label }: { place: string | undefined; ink: string | undefined; top: string; label: string },
+) {
   return (
-    <div className={clsx(css.seal, place, pass && css.sealInk)}>
+    <div className={clsx(css.seal, place, ink)}>
       <span className={css.sealTop}>{top}</span>
       <span className={clsx(css.sealMain, label.length > 4 && css.sealSmall)}>{label}</span>
     </div>
@@ -210,6 +217,7 @@ export function ReviewDesk({ useSession, sessionId, t, readLimits, readQualifica
   ])
   const elapsed = deskElapsed(view, now)
   const sealLabel = t(sealKey(view.verdict))
+  const sealInkClass = SEAL_INK_CLASS[sealInk(view.verdict)]
   const wait = view.wait
 
   const onCopy = (): void => {
@@ -251,7 +259,7 @@ export function ReviewDesk({ useSession, sessionId, t, readLimits, readQualifica
                 <div className={css.docBody}>
                   <Seal
                     place={css.sealSheet}
-                    pass={view.verdict === 'pass'}
+                    ink={sealInkClass}
                     top={t('desk.seal.label')}
                     label={sealLabel}
                   />
@@ -285,7 +293,7 @@ export function ReviewDesk({ useSession, sessionId, t, readLimits, readQualifica
                 {sealed && (
                   <Seal
                     place={css.sealCorner}
-                    pass={view.verdict === 'pass'}
+                    ink={sealInkClass}
                     top={t('desk.seal.label')}
                     label={sealLabel}
                   />

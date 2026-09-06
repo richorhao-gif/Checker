@@ -27,8 +27,8 @@ export type { BidReviewComposerProps, BidReviewInjected, ReviewDeskInjected, Rev
 export type { BidReviewKey } from './locales.ts'
 export type { BidReviewSurface, BidReviewStep, SurfaceFacts } from './surface.ts'
 export type {
-  DeskActivity, DeskBasis, DeskDot, DeskFailure, DeskFacts, DeskStage, DeskTick, DeskVerdict,
-  DeskView, DeskWait,
+  DeskActivity, DeskBasis, DeskDot, DeskFailure, DeskFacts, DeskSealInk, DeskStage, DeskTick,
+  DeskVerdict, DeskView, DeskWait,
 } from './desk.ts'
 export type { Outcome, ReviewFailure } from './remote.ts'
 export type { StoredDocument } from './document.ts'

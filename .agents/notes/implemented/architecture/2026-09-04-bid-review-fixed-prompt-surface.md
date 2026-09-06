@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-09-04-bid-review-fixed-prompt-surface.zh.md)
 
+> The fixed question remains literal product copy in `prompt.ts` rather than a dictionary entry. It is now submitted with a second block of fixed copy, the opinion sheet's output contract, added by [the declaration-line verdict](../bug-fix/2026-09-06-bid-verdict-declaration-line.md) under the same rule and the same limitation on localizing it.
+
 ## Problem
 
 A company runs one Web Host on a server for many LAN users who must not type a free-form message. The only admissible request is one fixed review question over exactly one uploaded bid document, judged against one company-wide qualifications text that every user shares.

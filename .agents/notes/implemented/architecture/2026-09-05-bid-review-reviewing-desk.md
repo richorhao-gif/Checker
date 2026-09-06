@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-09-05-bid-review-reviewing-desk.zh.md)
 
+> The shadowing, the derived postures, the stand-in paper, and the sheet's own reads remain current. The seal's whole-body scan for 不符合 and then 符合 is superseded by [the declaration-line verdict](../bug-fix/2026-09-06-bid-verdict-declaration-line.md), which reads one `判定：` line in the sheet's head and adds 待核验 as a third verdict.
+
 ## Problem
 
 The fixed-question bid review ([intake Agent Note](2026-09-04-bid-review-fixed-prompt-surface.md)) submits one prompt and then hands the screen to the ordinary transcript. For this deployment the transcript is the wrong surface: it interleaves tool heads, streamed prose, and reasoning into a scroll a reviewer must interpret, while the only two things a reviewer asks are whether the review is still running and what it concluded. The deployment also has no second page to put a report on, because a conversation admits exactly one document and one question.

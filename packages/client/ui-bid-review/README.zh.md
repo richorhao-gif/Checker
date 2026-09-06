@@ -14,13 +14,13 @@ composer 条目不声明 `children`，因此不会获得 `renderSlot` kit，命�
 
 四个操作经由 `ctx.remote.bidReview` 执行。生成的面把每个业务结果包在 `RemoteResult` 中，而 Host 在其中返回自己的 `{ ok, value | error }` union，因此 [`src/client/remote.ts`](src/client/remote.ts) 把两层封装折叠成两个组件共同渲染的单一 `Outcome<T>`，并由 `failureText` 把每个 code 映射进 `bidReview` 词典。`uploadDocument` 先读取 limits 并依据 `file.size` 拒绝超限选择，因此一次被拒绝的文件只花费一次 Remote 调用，而不是一个标签页容纳不下的 base64 字符串。
 
-`/client` 导出插件本体（`apply`/`inject`）、`BidReviewComposer`、`QualificationsEditor` 与 `ReviewDesk` 组件、固定问题与 `buildBidReviewPrompt`、审卷台推导（`deriveDesk`，以及把 stage、verdict、wait 或 basis 读成词典键的文案决策），以及注入面、surface、desk、outcome 与 document 类型。界面文案保存在双语 `bidReview` 命名空间词典中。
+`/client` 导出插件本体（`apply`/`inject`）、`BidReviewComposer`、`QualificationsEditor` 与 `ReviewDesk` 组件、固定问题、输出契约与 `buildBidReviewPrompt`、审卷台推导（`deriveDesk`，以及把 stage、verdict、wait 或 basis 读成词典键或印章墨色的文案决策），以及注入面、surface、desk、outcome 与 document 类型。界面文案保存在双语 `bidReview` 命名空间词典中。
 
 ## 审卷台
 
 `deriveDesk` 把十个 Session snapshot 字段折叠成一个 `DeskView`，`ReviewDesk` 不再渲染别的东西，因此审卷台的状态不可能与日志不一致：Session 为空时 `hidden`，首个回合开始前 `waiting`，进行中给出正在运行的工具名与该回合在做什么（`tool`、`writing` 或 `thinking`），第一个待处理的审批或反问时 `paused`，有持久失败文案、或某个回合的流式 partial 冻结为 `interrupted` 时 `failed`，Host 已移除 Session 时 `ended`，窗口内最高回合带上结束时间后 `sealed`。没有任何 stage 从 prompt 文本里读出，也没有任何 stage 是编造的。页边标记每个对应一次已结算的工具调用，超过十二个后均匀抽样，因此每个标记仍指向一个真实的序号；计时器是进行中回合自身的跨度；暂停注记在提问者给出原因时携带该原因；纸面上的盲行是一个文件替身，其色调跟随已结算调用数，绝不是文件内部被测量的位置。审卷台只指出等待在哪——回答它的审批或反问面板仍在本包不遮蔽的 `conversation.composer` chain 上。
 
-封卷的审卷台在批注页上落印，保持 1.8 秒，然后翻到意见书；`prefers-reduced-motion` 下立即翻面；两面都可以手动翻回。意见书页眉取 `getLimits().companyName`，部署未命名公司时回退到本包自己的文案。依据行说明被审文件与共享记录的保存时间，或直言记录读不到、为空、从未保存过，而不假装有依据。红头编号是 Session id 去掉 store 的 `session-` 铸造前缀、再截取八个字符。正文是最后一条带文本的 assistant 消息，`verdictOf` 从该文本里读出结论：出现任何「不符合」判为不通过，否则出现「符合」判为通过，两者都没说的报告让印章不落结论，而不是猜一个。
+封卷的审卷台在批注页上落印，保持 1.8 秒，然后翻到意见书；`prefers-reduced-motion` 下立即翻面；两面都可以手动翻回。意见书页眉取 `getLimits().companyName`，部署未命名公司时回退到本包自己的文案。依据行说明被审文件与共享记录的保存时间，或直言记录读不到、为空、从未保存过，而不假装有依据。红头编号是 Session id 去掉 store 的 `session-` 铸造前缀、再截取八个字符。正文是最后一条带文本的 assistant 消息，而 `verdictOf` 只从该文本的头部读出结论：一行 `判定：` 声明「不符合」判为不通过、「待核验」判为待人补资料、「符合」判为通过；头部三者都未声明、或给声明加了修饰词（如「基本符合」）的意见书让印章不落结论，而不是猜一个。墨色随结论走：不通过与未落结论用朱红，通过用墨绿，等人补资料的事实用审卷台自己的琥珀。声明行保留在正文里而不被剥除，因为它是模型自己的话，也是印章所依据的证据。
 
 页眉与依据都是部署自己的文字，因此每次封卷审核通过注入的 `readLimits` 与 `readQualifications` 各读一次；在审卷台消失之后才返回的读取被丢弃。铅笔操作中，复制意见书走 `ui-primitives` 共享的 `writeClipboard`，宿主拒绝写入时按钮不宣称已复制；保存走 `downloadText`，落成一个以被审文件命名的 Markdown 文件，顺序与意见书自身的阅读顺序一致。
 
@@ -30,12 +30,14 @@ composer 条目不声明 `children`，因此不会获得 `renderSlot` kit，命�
 
 #### 模型看到的内容
 
-一条普通用户消息，由本包组装并通过标准 input actions 提交。[`src/client/prompt.ts`](src/client/prompt.ts) 拥有字面量 `BID_REVIEW_PRESET_QUESTION`；其后各字段按固定顺序排列，先是上传文件的服务器绝对路径，再是逐字的共享资格文本。Agent 自己用其文件工具从该路径读取文件。本包不注册任何工具、提示词段落或 Session 事件，模型也从不知道 composer 的本地步骤。
+一条普通用户消息，由本包组装并通过标准 input actions 提交。[`src/client/prompt.ts`](src/client/prompt.ts) 拥有字面量 `BID_REVIEW_PRESET_QUESTION`，以及要求意见书判定声明行的字面量 `BID_REVIEW_VERDICT_CONTRACT`；其后各字段按固定顺序排列，先是上传文件的服务器绝对路径，再是逐字的共享资格文本。Agent 自己用其文件工具从该路径读取文件。本包不注册任何工具、提示词段落或 Session 事件，模型也从不知道 composer 的本地步骤。
 
 ##### 审核按钮提交的 prompt 顺序
 
 ```markdown
 {BID_REVIEW_PRESET_QUESTION}
+
+{BID_REVIEW_VERDICT_CONTRACT}
 
 标书文件：{absolute server path of the uploaded document}
 
@@ -45,20 +47,21 @@ composer 条目不声明 `children`，因此不会获得 `renderSlot` kit，命�
 
 #### Token 影响
 
-固定问题为 145 个字符（435 UTF-8 字节），因此其开销在每个会话与每个部署上都相同。资格文本是唯一增长的部分，并由 Host 的 `maxQualificationsBytes` 限制（Web bundle 中为 64 KiB）；空记录只贡献其标题与一个空行。文件路径增加一行，而文件自身内容从不由本包内联。
+固定问题与输出契约共 310 个字符（926 UTF-8 字节），因此它们的开销在每个会话与每个部署上都相同。资格文本是唯一增长的部分，并由 Host 的 `maxQualificationsBytes` 限制（Web bundle 中为 64 KiB）；空记录只贡献其标题与一个空行。文件路径增加一行，而文件自身内容从不由本包内联。
 
 #### KV Cache 影响
 
-该 prompt 是新会话开头的用户消息，因此构成该会话的前缀。共享同一份资格文本的两个会话可以复用该问题与该文本；两次会话之间的保存会改变前缀的尾部，从而改变自资格起的缓存条目。本包的任何行为都不会触碰进行中会话的历史。
+该 prompt 是新会话开头的用户消息，因此构成该会话的前缀。共享同一份资格文本的两个会话可以复用该问题、该契约与该文本；两次会话之间的保存会改变前缀的尾部，从而改变自资格起的缓存条目。本包的任何行为都不会触碰进行中会话的历史。
 
 ## 已知局限与延后工作
 
 - **该界面没有自由文本输入**——遮蔽 composer bar 同时移除了图片栏、命令菜单、plan 座位与模型选择器，因为该条目不声明 `children`。模型选择由服务端 preset 配置决定，而被模型阻塞的 Session 无法在此界面解除；其 `blocked` 原因仍会渲染。
 - **一份文件是浏览器状态而非持久不变量**——该保证是 Client 状态加 `sessionStorage`，因此按浏览器标签页计，能在刷新后保留，但不能在另一个浏览器或清空存储后保留。Host 不做按会话登记，也不会拒绝第二条 prompt。
-- **固定问题不可本地化**——它是字面产品文案而非词典条目，因为它以用户消息提交给模型，本地化它会改变每个部署的 Agent 所收到的内容。修改它是 `prompt.ts` 中的源码编辑。
+- **固定问题与输出契约都不可本地化**——二者都是字面产品文案而非词典条目，因为它们以用户消息提交给模型，本地化它们会改变每个部署的 Agent 所收到的内容。修改任一段都是 `prompt.ts` 中的源码编辑。
 - **共享记录没有跨标签页推送**——资格徽标在挂载时与弹窗关闭时刷新，因此另一个标签页的保存要到那时才可见；Host 不为该记录发布 live frame。
 - **上传进度是不确定的**——intake 对整个 base64 编码加 JSON-RPC 往返只显示一个上传中状态，没有字节进度。慢速局域网上的 100 MiB 文件会在该状态停留到载体完成为止。
 - **重新选择会遗留上一次上传**——提交前选择另一个文件会把第一个文件留在服务器磁盘上，因为没有任何东西追踪哪个已落盘文件仍被引用。
 - **审卷台替换的是转录而非页签**——它注册在 `conversation.view` 的 `chat` 格上，因此该格保留自己的 id，旁边的 trajectory 页签不变，而在审卷台渲染期间对话转录完全不被挂载。会话自身的节点仍可在该 trajectory 视图中阅读。由于遮蔽转录也遮蔽了它的「加载更早」按钮，审卷台通过注入的 `loadOlder` 自行翻页，直到一个重开 Session 的提交 prompt 进入窗口。
 - **进度是循环的，不是标书业务的**——每个 stage、每个标记与每处色调都来自 Session snapshot 的回合或工具调用事实，因为日志中没有任何东西区分「资格核对」与「提取评分准则」。要显示标书业务的阶段，得先把它们发布为 Session 事件；审卷台不从 prompt 或 assistant 文本里读阶段。
-- **意见书是模型的收尾文本**——正文取最后一条带文本的 assistant 消息，因此以工具调用收尾的审核渲染「没有留下结论文本」的文案，而既未说「符合」也未说「不符合」的报告带着未落结论的印章。二者都不在此处纠正，因为编一个模型没有给出的结论会让意见书说谎。
+- **意见书是模型的收尾文本**——正文取最后一条带文本的 assistant 消息，因此以工具调用收尾的审核渲染「没有留下结论文本」的文案，而头部没有判定声明行的意见书带着未落结论的印章：契约存在之前记录的每一次审核现在都落在这里。二者都不在此处纠正，因为编一个模型没有给出的结论会让意见书说谎；要在旧审核上看到真章，就得重新送审一次。
+- **判定声明只在意见书头部被读取**——`verdictOf` 只搜前八行，因此把结论写在更后面的意见书虽然确实给了结论，却带着未落结论的印章。契约要求写在第一行，八行是给标题与引用块留的余量；改为通读正文正是当初让一句被引用的招标要求或一个假设句盖出意见书从未给出的结论的原因。
